@@ -1,0 +1,19 @@
+;; define, identifier then args then return expression
+;; use nil or () for no args
+(define a () 5)
+
+;; function application
+(a args)
+
+;; let bindings
+(let ())
+
+;; list syntax is taken from lisp
+'(1 2 3)
+
+;; predefined fns
+(length a)
+(if exp () ())
+
+;; pure functional language, no side effects.
+;; maybe define some functions to show output
