@@ -8,12 +8,16 @@
 ;; let bindings
 (let ())
 
-;; list syntax is taken from lisp
+;; quotes are taken from lisp
 '(1 2 3)
 
-;; predefined fns
+;; predefined fns ?
 (length a)
-(if exp () ())
+(if (= a b) 4 6)
 
-;; pure functional language, no side effects.
-;; maybe define some functions to show output
+;; functional language, but order of evaluation is defined.
+
+;; maybe define some functions to show output ?
+
+;; implement only a small part in the interpreter, try to use lisp
+;; metaprogramming for other constructs 

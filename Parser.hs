@@ -5,7 +5,6 @@ import Data.Tuple
 import Data.Foldable
 import Data.Set (Set)
 import qualified Data.Set as E
-import Data.List.NonEmpty
 import Control.Applicative
 import Control.Monad
 import Control.Monad.Reader
@@ -312,3 +311,16 @@ ignoreErr p = Parser $ \s -> let (ns, res) = unwrapParser p s
                                   Left a -> case a of
                                     TrivialError loc u e -> (ns, Left $ TrivialError (-1) u e)
                                     _ -> (ns, res)
+
+prettyier :: (Show a) => a -> IO ()
+prettyier s = putStrLn $ snd $
+              foldr pick (0,"") $
+              show s
+  where opening = map (==) "{["
+        closing = map (==) "}]"
+        pick x (ind, str) | x == ','          = (ind, x:'\n':getInd (ind*2-1)++str)
+                          | any ($ x) opening = (ind-2, x:'\n':getInd (ind*2)++str)
+                          | any ($ x) closing = (ind+2, x:str)
+                          | x == '\n'         = (ind, x:getInd (ind*2)++str)
+                          | otherwise         = (ind, x:str)
+        getInd i = replicate i ' '
