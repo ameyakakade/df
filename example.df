@@ -20,4 +20,18 @@
 ;; maybe define some functions to show output ?
 
 ;; implement only a small part in the interpreter, try to use lisp
-;; metaprogramming for other constructs 
+;; macros for other constructs 
+
+(lambda a (lambda b (lambda c 6)))
+
+(lambda a)
+
+(define + (lambda a (lambda b (+ a b))))
+(+ 6 9)
+
+;; the define just binds the list to a name
+;; when we 'call' that fn it is replaced with the lambda
+;; then the eval occurs
+;; we eval 6, bind it to a and replace with inner lambda
+;; we eval 9, bind it to b and replace with inner lambda
+;; the the inner lambda is evaluated, giving us 15
