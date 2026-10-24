@@ -70,10 +70,10 @@ applyEval name (a:as) = do
     -- If not found, find a predefined fn.
     defs <- gets definitions
     case M.lookup name defs of
-      Just ls -> _
+      Just ls -> undefined
       Nothing -> do
           case M.lookup name of
-            _ -> _
+            _ -> undefined
     -- Evaluate a, if a is a lambda, get first element from as
 
 listEval :: [Atom] -> StateP Atom
