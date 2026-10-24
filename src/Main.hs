@@ -218,4 +218,9 @@ main = do
                 print (definitions state)
                 putStrLn ""
                 putStr "Results: "
-                print (last $ tail a)
+                print (last a)
+                putStr "Output: "
+                case M.lookup "output" (definitions state) of
+                  Just ((_, Str a):_) -> putStrLn a
+                  Just ((_, a):_) -> print a
+                  Nothing -> putStrLn "None"
