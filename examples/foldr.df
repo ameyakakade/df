@@ -1,0 +1,8 @@
+(define foldr
+  '(lambda ('fn 'list 'acc)
+     (if list
+         (fn (car list) (foldr fn (cdr list) acc))
+         acc ; Return accumulator if list is empty
+         )))
+
+(foldr '(lambda ('v 'acc) (* v acc)) '(1 2 3 4 5 6 7 8) 1)

@@ -1,5 +1,11 @@
 module Types where
 
+import qualified Data.Map as M
+import qualified Data.Set as E
+import Control.Monad.State.Lazy
+import Control.Monad.Trans.Either
+import Data.List.NonEmpty
+
 data Atom = Num Int
           | Str String
           | List [Atom] -- [] is nil or '()
@@ -12,3 +18,15 @@ type Result = Either String Atom
 data Fun = Unary (Atom -> Result)
          | Binary (Atom -> Atom -> Result)
          | Ternary (Atom -> Atom -> Result)
+
+-- Stores map of string to scope no and atom
+-- Stores current scope index
+data ProgramState = ProgramState {
+    definitions :: M.Map String [(Int, Atom)],
+    scope :: Int,
+    trace :: [String]
+    } deriving (Show)
+
+initState = ProgramState M.empty 0 []
+
+type StateP a = EitherT String (State ProgramState) a

@@ -6,7 +6,6 @@ import Data.Char
 import Data.Functor
 import Data.Foldable
 import Data.Functor.Identity
-import qualified Data.Set as E
 import qualified Data.Map as M
 import Control.Applicative
 import Control.Monad.State.Lazy
@@ -52,34 +51,38 @@ programParser = junk *> fmap List (Parser.many1 (atomParser <* junk))
 
 -- Evaluator
 
--- Stores map of string to scope no and atom
--- Stores current scope index
-data ProgramState = ProgramState {
-    definitions :: M.Map String (Int, Atom),
-    scope :: Int
-    } deriving (Show)
-
-initState = ProgramState M.empty 0
-
-type StateP a = EitherT String (State ProgramState) a
-
 inNewScope :: StateP a -> StateP a
 inNewScope a = do
     modify $ \s -> s { scope = scope s + 1}
     res <- a
     -- cleanup bindings
     modify $ \s -> s { scope = scope s - 1}
-    modify $ \s -> s { definitions = M.filter (\(i, _) -> i <= scope s) (definitions s) }
+    modify $ \s -> s { definitions = M.map (filter (\(i, _) -> i <= scope s))
+                                     (definitions s) }
     pure res
+
+defineSymbol :: String -> Atom -> StateP ()
+defineSymbol name ers = do
+    defs <- gets definitions
+    case M.lookup name defs of
+        -- No previous variables
+      Nothing -> modify (\s -> s { definitions = M.insert name [(scope s, ers)] (definitions s) })
+      -- If shadowing and symbol is bound to a singleton, if the new value is same, just keep the old value.
+      -- This should work even if the list has other elements
+      Just [a] -> if snd a == ers then return ()
+                  else modify (\s -> s { definitions = M.insert name ((:) (scope s, ers) [a]) (definitions s) })
+      Just a -> modify (\s -> s { definitions = M.insert name ((:) (scope s, ers) a) (definitions s) })
 
 -- Define and binds a expr
 defineEval :: [Atom] -> StateP Atom
 defineEval [n, rs] = case n of
   Str name -> do
       ers <- evaluator rs
-      index <- gets scope
-      modify (\s -> s { definitions = M.insert name (index, ers) (definitions s) }) $> List []
+      defs <- gets definitions
+      defineSymbol name ers
+      pure (List [])
   _ -> left "Name has to be a String."
+
 defineEval _ = left "Invalid define block."
 
 -- Deconstructs the lambda using pattern matching, evals the args, and apply.
@@ -95,10 +98,16 @@ lambdaEval ( (List [Str "lambda", List argList, expr] ) :args) = do
                 an <- evaluator aname
                 ae <- evaluator aexpr
                 case an of
-                  Str a -> modify (\s -> s { definitions = M.insert a (scope s, ae) (definitions s) })
+                  Str a -> defineSymbol a ae
                   _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
           )
           (zip argList args)
+          -- Add trace every time a lambda is reduced
+        modify $ \s ->
+          s { trace = trace s ++ ["Definitions: " ++ show (definitions s) ++
+                                   "\nExpr: " ++ show expr ++
+                                   "\nArgs: " ++ show (zip argList args) ++
+                                   "\nScope: " ++ show (scope s) ++ "\n"]}
         evaluator expr
 
 lambdaEval l = left $ "Invalid lambda, " ++ show l
@@ -106,7 +115,10 @@ lambdaEval l = left $ "Invalid lambda, " ++ show l
 lookupSymbol :: String -> StateP (Maybe Atom)
 lookupSymbol name = do
     defs <- gets definitions
-    pure $ snd <$> M.lookup name defs
+    case M.lookup name defs of
+      Nothing -> pure Nothing
+      -- Find the newest one
+      Just set -> pure $ Just $ snd $ foldl' (\(acc, a) (elem, b) -> if acc > elem then (acc, a) else (elem, b)) (0, List []) set
 
 letEval :: [Atom] -> StateP Atom
 letEval [List defines, res] = inNewScope $ do
@@ -169,10 +181,10 @@ evaluator (List expr) = listEval expr
 evaluator (Num a) = pure $ Num a
 -- If trying to evaluate a symbol, lookup in defs
 evaluator (Str a) = do
-    defs <- gets definitions
-    case M.lookup a defs of
-      Nothing -> left ("Could not find variable, " ++ a)
-      Just res -> pure $ snd res
+    l <- lookupSymbol a
+    case l of
+      Just a -> pure a
+      Nothing -> left ("Could not find variable " ++ a)
 evaluator (Quote a) = pure a 
 evaluator _ = pure (List []) -- Figure out eval's for other expressions.
 
@@ -193,10 +205,14 @@ main = do
             Left a -> do
                 putStrLn "Error when interpreting,"
                 putStrLn a
+                putStrLn "Trace: "
+                traverse_ putStrLn (trace state)
             Right a -> do
+                putStrLn "Trace: "
+                traverse_ putStrLn (trace state)
                 putStrLn "Completed evaluation successfully!"
                 putStr "List of global bound symbols: "
-                print state
+                print (definitions state)
                 putStrLn ""
                 putStr "Results: "
                 print (last $ tail a)
