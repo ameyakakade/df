@@ -79,33 +79,32 @@ defineEval [n, rs] = case n of
       index <- gets scope
       modify (\s -> s { definitions = M.insert name (index, ers) (definitions s) }) $> List []
   _ -> left "Name has to be a String."
-defineEval _ = left "Too many arguments for define."
+defineEval _ = left "Invalid define block."
 
-applyEval :: String -> [Atom] -> StateP Atom
-applyEval name [] = pure (List [])
-applyEval name as = do
-    -- If a is a number, error
-    -- Lookup a in definitions and replace it
-    -- If not found, find a predefined fn.
+-- Deconstructs the lambda using pattern matching, evals the args, and apply.
+lambdaEval :: [Atom] -> StateP Atom
+lambdaEval ( (List [Str "lambda", (List argList), expr] ) :args) = do
+    if length argList /= length args
+      then left ("Incorrect number of arguments. Expected " ++ show (length argList) ++ ", got " ++ show (length args))
+      else return (List [])
+    inNewScope $ do
+        traverse
+          (\(aname, aexpr) -> do
+                an <- evaluator aname
+                ae <- evaluator aexpr
+                case an of
+                  Str a -> modify (\s -> s { definitions = M.insert a (scope s, ae) (definitions s) })
+                  _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
+          )
+          (zip argList args)
+        evaluator expr
+
+lambdaEval l = left $ "Invalid lambda, " ++ show l
+
+lookupSymbol :: String -> StateP (Maybe Atom)
+lookupSymbol name = do
     defs <- gets definitions
-    case M.lookup name defs of
-      Just ls -> undefined
-      Nothing -> do
-          case M.lookup name predefined of
-            Nothing -> left ("Invalid function, " ++ name)
-            Just f -> case f of
-              Unary f -> undefined
-              Binary f -> if length as >= 2
-                             -- Evaluate the expr before passing it
-                             -- along to f
-                          then do
-                            ea <- evaluator (head as)
-                            eas <- evaluator (head (tail as))
-                            case f ea eas of
-                              Left a -> left a
-                              Right a -> listEval (a:drop 2 as)
-                          else left "Not enough arguments, expected 2"
-    -- Evaluate a, if a is a lambda, get first element from as
+    pure $ fmap snd $ M.lookup name defs
 
 letEval :: [Atom] -> StateP Atom
 letEval [(List defines), res] = inNewScope $ do
@@ -121,13 +120,32 @@ listEval (a:as) = case a of
     "define" -> defineEval as
     "if" -> undefined
     "let" -> letEval as
-    _ -> applyEval s as
+    s -> do
+        d <- lookupSymbol s
+        case d of
+          Just c -> lambdaEval (c:as)
+          Nothing -> case M.lookup s predefined of
+                       Just c -> case c of
+                                   Unary f -> if length as > 1
+                                              then left "Too many arguments, expected 1."
+                                              else evaluator (head as) >>= \a -> case f a of
+                                                                                   Left m -> left m
+                                                                                   Right r -> pure r
+                                   Binary f -> if length as > 2
+                                               then left "Too many arguments, expected 2."
+                                               else do
+                                       a1 <- evaluator (head as)
+                                       a2 <- evaluator (head (tail as))
+                                       case f a1 a2 of
+                                         Left m -> left m
+                                         Right r -> pure r
+                                   Ternary f -> undefined
+                       Nothing -> left ("Unknown function " ++ s)
   Num n -> if null as then pure a else left "Invalid function of type 'Num'"
   -- Evaluate the whole list from left to right
   List l -> do
-      l <- listEval l
-      ls <- traverse evaluator as
-      pure $ List (l:ls)
+      lr <- listEval l
+      listEval (lr:as)
   Quote q -> pure q
 
 evaluator :: Atom -> StateP Atom
@@ -139,6 +157,7 @@ evaluator (Str a) = do
     case M.lookup a defs of
       Nothing -> left ("Could not find variable, " ++ a)
       Just res -> pure $ snd res
+evaluator (Quote a) = pure $ a 
 evaluator _ = pure (List []) -- Figure out eval's for other expressions.
 
 main :: IO ()
@@ -150,18 +169,17 @@ main = do
       Left e -> do
           putStrLn "Syntax error :)"
           print e
-      Right ast -> do
+      Right (List ast) -> do
           print ast
           putStrLn ""
-          let Identity (res, state) = runStateT (runEitherT (evaluator ast)) initState
+          let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
           case res of
             Left a -> do
                 putStrLn "Error when interpreting,"
-                print a
+                putStrLn a
             Right a -> do
                 putStrLn "Completed evaluation successfully!"
                 putStr "List of global bound symbols: "
                 print state
-                let (List l) = a
                 putStr "Results: "
-                print l
+                print a

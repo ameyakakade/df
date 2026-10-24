@@ -4,7 +4,7 @@ data Atom = Num Int
           | Str String
           | List [Atom] -- [] is nil or '()
           | Quote Atom
-          deriving (Show)
+          deriving (Show, Eq)
 
 type Result = Either String Atom
 

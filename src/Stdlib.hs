@@ -18,4 +18,3 @@ operators s = Binary $ case s of
   "*" -> fn (*)
   where fn f (Num a) (Num b) = Right (Num (f a b))
         fn f _ _ = Left "Can apply only with numbers."
-                       

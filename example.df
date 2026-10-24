@@ -37,3 +37,10 @@
 ;; the the inner lambda is evaluated, giving us 15
 
 ;; nil is List []
+
+((lambda a ((+ 1 a))) 69)
+
+;; we cannot have currying in lisp without big hacks.
+;; just create a lambda when needed
+
+(lambda (a b c) (+ a b))
