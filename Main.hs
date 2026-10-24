@@ -1,6 +1,7 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE LambdaCase #-}
 import Parser
+import Types
 
 import Data.Char
 import qualified Data.Set as E
@@ -9,12 +10,6 @@ import Control.Applicative
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Either
 import System.Environment
-
-data Atom = Num Int
-          | Str String
-          | List [Atom] -- [] is nil or '()
-          | Quote Atom
-          deriving (Show)
 
 comment :: Parser ()
 comment = do
@@ -64,10 +59,22 @@ initState = ProgramState M.empty
 type StateP a = EitherT String (State ProgramState) a
 
 defineEval :: [Atom] -> StateP Atom
-defineEval (n:rs) = left "hi"
+defineEval (n:rs) = case n of
+  Str name -> modify (\s -> s { definitions = M.insert name (List rs) (definitions s) }) *> pure (List [])
+  _ -> left "Name has to be a String."
 
 applyEval :: String -> [Atom] -> StateP Atom
-applyEval = undefined
+applyEval name (a:as) = do
+    -- If a is a number, error
+    -- Lookup a in definitions and replace it
+    -- If not found, find a predefined fn.
+    defs <- gets definitions
+    case M.lookup name defs of
+      Just ls -> _
+      Nothing -> do
+          case M.lookup name of
+            _ -> _
+    -- Evaluate a, if a is a lambda, get first element from as
 
 listEval :: [Atom] -> StateP Atom
 listEval [] = pure (List [])
@@ -98,4 +105,3 @@ main = do
       Right ast -> do
           print ast
           print $ runStateT (runEitherT (evaluator ast)) initState
-
