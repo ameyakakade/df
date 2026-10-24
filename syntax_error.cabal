@@ -7,7 +7,6 @@ maintainer:         ameyakakade@gmail.com
 build-type:         Simple
 
 common warnings
-    ghc-options: -Wall
 
 executable interpreter
     -- Import common warning flags.
