@@ -4,6 +4,7 @@ import Stdlib
 
 import Data.Char
 import Data.Functor
+import Data.Foldable
 import Data.Functor.Identity
 import qualified Data.Set as E
 import qualified Data.Map as M
@@ -64,10 +65,10 @@ type StateP a = EitherT String (State ProgramState) a
 
 inNewScope :: StateP a -> StateP a
 inNewScope a = do
-    modify $ \s -> s { scope = (scope s) + 1}
+    modify $ \s -> s { scope = scope s + 1}
     res <- a
     -- cleanup bindings
-    modify $ \s -> s { scope = (scope s) - 1}
+    modify $ \s -> s { scope = scope s - 1}
     modify $ \s -> s { definitions = M.filter (\(i, _) -> i <= scope s) (definitions s) }
     pure res
 
@@ -83,12 +84,12 @@ defineEval _ = left "Invalid define block."
 
 -- Deconstructs the lambda using pattern matching, evals the args, and apply.
 lambdaEval :: [Atom] -> StateP Atom
-lambdaEval ( (List [Str "lambda", (List argList), expr] ) :args) = do
+lambdaEval ( (List [Str "lambda", List argList, expr] ) :args) = do
     if length argList /= length args
       then left ("Incorrect number of arguments. Expected " ++ show (length argList) ++ ", got " ++ show (length args))
       else return (List [])
     inNewScope $ do
-        traverse
+        traverse_
           (\(aname, aexpr) -> do
                 an <- evaluator aname
                 ae <- evaluator aexpr
@@ -104,11 +105,11 @@ lambdaEval l = left $ "Invalid lambda, " ++ show l
 lookupSymbol :: String -> StateP (Maybe Atom)
 lookupSymbol name = do
     defs <- gets definitions
-    pure $ fmap snd $ M.lookup name defs
+    pure $ snd <$> M.lookup name defs
 
 letEval :: [Atom] -> StateP Atom
-letEval [(List defines), res] = inNewScope $ do
-    traverse evaluator defines
+letEval [List defines, res] = inNewScope $ do
+    traverse_ evaluator defines
     evaluator res
 letEval _ = left "Invalid syntax for let block."
 
@@ -118,7 +119,14 @@ listEval [] = pure (List [])
 listEval (a:as) = case a of
   Str s -> case s of
     "define" -> defineEval as
-    "if" -> undefined
+    "if" -> do
+        if length as /= 3 then left "Invalid if block."
+          else do
+            let [cond, tb, fb] = as
+            cE <- evaluator cond
+            if cE == List []
+              then evaluator fb
+              else evaluator tb
     "let" -> letEval as
     s -> do
         d <- lookupSymbol s
@@ -157,7 +165,7 @@ evaluator (Str a) = do
     case M.lookup a defs of
       Nothing -> left ("Could not find variable, " ++ a)
       Just res -> pure $ snd res
-evaluator (Quote a) = pure $ a 
+evaluator (Quote a) = pure a 
 evaluator _ = pure (List []) -- Figure out eval's for other expressions.
 
 main :: IO ()
