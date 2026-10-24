@@ -1,0 +1,13 @@
+(define c
+  (let
+      ((define a 6)
+       (define b (+ (+ 1 3) (- a 3)))
+       )
+       (+ a b)
+    )
+  )
+
+(let
+    ((define a 69))
+    (+ c a)
+  )
