@@ -3,6 +3,7 @@ import Types
 import Stdlib
 
 import Data.Char
+import Data.List
 import Data.Functor
 import Data.Foldable
 import Data.Functor.Identity
@@ -59,6 +60,7 @@ inNewScope a = do
     modify $ \s -> s { scope = scope s - 1}
     modify $ \s -> s { definitions = M.map (filter (\(i, _) -> i <= scope s))
                                      (definitions s) }
+    modify $ \s -> s { definitions = M.filter (\l -> if null l then False else True) (definitions s) }
     pure res
 
 defineSymbol :: String -> Atom -> StateP ()
@@ -190,26 +192,27 @@ evaluator _ = pure (List []) -- Figure out eval's for other expressions.
 
 main :: IO ()
 main = do
-    [fn] <- getArgs
-    code <- readFile fn
+    args <- getArgs
+    let fn = filter (\s -> not $ isPrefixOf "-" s) args
+    let check name = case find (== name) args of Just _ -> True; Nothing -> False
+    let debug = check "-debug"
+    let putAst = check "-ast"
+    code <- fmap concat (traverse readFile fn)
     let (ps, res) = runParser programParser code
     case res of
       Left e -> do
           putStrLn "Syntax error :)"
           print e
       Right (List ast) -> do
-          print ast
+          if putAst then print ast else pure ()
           putStrLn ""
           let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
+          if debug then do putStrLn "Trace: "; traverse_ putStrLn (trace state) else pure ()
           case res of
             Left a -> do
                 putStrLn "Error when interpreting,"
                 putStrLn a
-                putStrLn "Trace: "
-                traverse_ putStrLn (trace state)
             Right a -> do
-                putStrLn "Trace: "
-                traverse_ putStrLn (trace state)
                 putStrLn "Completed evaluation successfully!"
                 putStr "List of global bound symbols: "
                 print (definitions state)
