@@ -12,6 +12,7 @@ predefined = M.fromList [
     ("*", operators "*"),
     ("=", equals),
     ("car", car),
+    ("cons", cons),
     ("cdr", cdr)
     ]
 
@@ -31,3 +32,8 @@ car = Unary $ \case List a -> Right (if null a then List [] else head a); _ -> L
 
 cdr :: Fun
 cdr = Unary $ \case List a -> Right (if null a then List [] else List $ tail a); _ -> Left "cdr function expects a list as argument"
+
+cons :: Fun
+cons = Binary $ \a b -> case b of
+                          List b -> Right $ List (a:b)
+                          b -> Right $ List (a:[b])

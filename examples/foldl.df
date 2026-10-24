@@ -1,0 +1,16 @@
+(define foldl
+  '(lambda ('fn 'list 'acc)
+     (if (cdr list)
+         (foldl fn (cdr list) (fn (car list) acc) )
+         acc ; Return accumulator if list is empty
+         )))
+
+(define a
+  (foldl '(lambda ('v 'acc) (* v acc)) '(1 2 3 4 5) 1))
+
+(define b
+  (foldl '(lambda ('v 'acc) (+ v acc)) '(1 2 3 4 5) 1))
+
+; Defining as variables so we can display results as a list
+
+(cons a b)

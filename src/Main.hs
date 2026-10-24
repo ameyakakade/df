@@ -86,7 +86,8 @@ defineEval _ = left "Invalid define block."
 lambdaEval :: [Atom] -> StateP Atom
 lambdaEval ( (List [Str "lambda", List argList, expr] ) :args) = do
     if length argList /= length args
-      then left ("Incorrect number of arguments. Expected " ++ show (length argList) ++ ", got " ++ show (length args))
+      then left ("Incorrect number of arguments. Expected " ++ show (length argList) ++ ", got " ++ show (length args) ++
+                "\n" ++ "Args are: " ++ show args)
       else return (List [])
     inNewScope $ do
         traverse_
@@ -119,14 +120,21 @@ listEval [] = pure (List [])
 listEval (a:as) = case a of
   Str s -> case s of
     "define" -> defineEval as
-    "if" -> do
-        if length as /= 3 then left "Invalid if block."
-          else do
-            let [cond, tb, fb] = as
-            cE <- evaluator cond
-            if cE == List []
-              then evaluator fb
-              else evaluator tb
+    "if" -> case length as of
+              2 -> do
+                  let [cond, tb] = as
+                  cE <- evaluator cond
+                  if cE == List []
+                    then pure (List [])
+                    else evaluator tb
+              3 -> do
+                  let [cond, tb, fb] = as
+                  cE <- evaluator cond
+                  if cE == List []
+                    then evaluator fb
+                    else evaluator tb
+              _ -> left "Invalid if block."
+          
     "let" -> letEval as
     s -> do
         d <- lookupSymbol s
@@ -189,5 +197,6 @@ main = do
                 putStrLn "Completed evaluation successfully!"
                 putStr "List of global bound symbols: "
                 print state
+                putStrLn ""
                 putStr "Results: "
-                print a
+                print (last $ tail a)

@@ -1,0 +1,7 @@
+(define map
+  '(lambda ('fn 'list)
+     (if list (cons (fn (car list)) (map fn (cdr list)) ))
+     )
+  )
+
+(map '(lambda ('a) (* a 2)) '(1 2 3 4) )
