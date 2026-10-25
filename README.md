@@ -148,7 +148,7 @@ The basic syntax of a if block is:
 It is obvious how the expressions are evaluated.
 When the false expression is omitted, it is replaced with empty list.
 
-*if* constructs checks if the condition-expression is equal to ()
+*if* checks if the condition-expression is equal to ()
 (empty list or nil), if it is false expression is evaluated and returned.
 Anything except '() (number, symbol, list) is considered true.
 
