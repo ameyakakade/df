@@ -1,0 +1,6 @@
+; Expression with nested expressions
+
+(- 1000 (+ (+ (* 4 3) (/ 1337 54)) (negate 78)))
+
+; This syntax is called as S-Expressions
+; https://en.wikipedia.org/wiki/S-expression

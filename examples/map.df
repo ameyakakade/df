@@ -5,3 +5,4 @@
   )
 
 (map '(lambda ('a) (* a 2)) '(1 2 3 4) )
+;; Defining and using map to multiply every element in a list by 2.

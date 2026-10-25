@@ -1,3 +1,5 @@
+;; foldl is defined and used, to calculate 5!, and sum of 1 to 5
+
 (define foldl
   '(lambda ('fn 'list 'acc)
      (if (cdr list)
@@ -7,10 +9,12 @@
 
 (define a
   (foldl '(lambda ('v 'acc) (* v acc)) '(1 2 3 4 5) 1))
+; foldl takes a lambda as argument.
 
 (define b
-  (foldl '(lambda ('v 'acc) (+ v acc)) '(1 2 3 4 5) 1))
+  (foldl '(lambda ('v 'acc) (+ v acc)) '(1 2 3 4 5) 0))
 
-; Defining as variables so we can display results as a list
+; defining as variables so we can display results as a list
 
 (cons a b)
+

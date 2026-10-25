@@ -206,3 +206,9 @@ Completed evaluation successfully!
 Results: Num 3
 Output: List [Str "hello",Str "world"]
 ```
+
+### Comments
+Comments start with `;` and end with newline.
+```
+(+ 1 1) ; this is a comment
+```
