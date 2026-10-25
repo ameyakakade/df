@@ -11,7 +11,9 @@ import qualified Data.Map as M
 import Control.Applicative
 import Control.Monad.State.Lazy
 import Control.Monad.Trans.Either
+import Control.Exception
 import System.Environment
+import System.Exit
 
 comment :: Parser ()
 comment = do
@@ -48,7 +50,7 @@ atomParser = fmap Quote (char '\'' *> parse) <|> parse
           <|>   Str  <$> strParser
 
 programParser :: Parser Atom
-programParser = junk *> fmap List (Parser.many1 (atomParser <* junk))
+programParser = junk *> fmap List (Parser.many (atomParser <* junk)) <* junk
 
 -- Evaluator
 
@@ -199,29 +201,36 @@ main = do
     let debug = check "-debug"
     let putAst = check "-ast"
     let globalSym = check "-symbols"
-    code <- fmap concat (traverse readFile fn)
-    let (ps, res) = runParser programParser code
-    case res of
-      Left e -> do
-          putStrLn "Syntax error :)"
-          print e
-      Right (List ast) -> do
-          if putAst then print ast else pure ()
-          putStrLn ""
-          let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
-          if debug then do putStrLn "Trace: "; traverse_ putStrLn (trace state); putStrLn "" else pure ()
+    code <- Control.Exception.try $ fmap concat (traverse readFile fn) :: IO (Either IOException String)
+    case code of
+      Left e -> do putStrLn $ "Could not open file: " ++ show e; exitWith (ExitFailure 1)
+      Right code -> do
+          let (ps, res) = runParser programParser code
+          if null (st_str ps) then return () else putStrLn $ "Unexpected string at end:\n " ++ (st_str ps); exitWith (ExitFailure 1)
           case res of
-            Left a -> do
-                putStrLn "Error when interpreting,"
-                putStrLn a
-            Right a -> do
-                putStrLn "Completed evaluation successfully!"
-                if globalSym then do putStr "List of global bound symbols: "; print (definitions state) else pure ()
+            Left e -> do
+                putStrLn "Syntax error :)"
+                print e
+                exitWith (ExitFailure 1)
+            Right (List ast) -> do
+                if putAst then print ast else pure ()
+                print ps
                 putStrLn ""
-                putStr "Results: "
-                print (last a)
-                putStr "Output: "
-                case M.lookup "output" (definitions state) of
-                  Just ((_, Str a):_) -> putStrLn a
-                  Just ((_, a):_) -> print a
-                  Nothing -> putStrLn "None"
+                let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
+                if debug then do putStrLn "Trace: "; traverse_ putStrLn (trace state); putStrLn "" else pure ()
+                case res of
+                  Left a -> do
+                      putStrLn "Error when interpreting,"
+                      putStrLn a
+                      exitWith (ExitFailure 1)
+                  Right a -> do
+                      putStrLn "Completed evaluation successfully!"
+                      if globalSym then do putStr "List of global bound symbols: "; print (definitions state) else pure ()
+                      putStrLn ""
+                      putStr "Results: "
+                      print (last a)
+                      putStr "Output: "
+                      case M.lookup "output" (definitions state) of
+                        Just ((_, Str a):_) -> putStrLn a
+                        Just ((_, a):_) -> print a
+                        Nothing -> putStrLn "None"

@@ -21,7 +21,7 @@ Use `cabal run interpreter -- [arguments]` to run the interpreter.
 ### Arguments
 Arguments provided to the interpreter are parsed in the following way:
 Everything not prefixed with '-' is treated as a file name. The order
-of files matters.
+of files matters. The file extension, does not.
 
 `-ast` displays the parsed ast.
 `-symbols` displays the globally defined symbols for the current program.
