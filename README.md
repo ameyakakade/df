@@ -9,7 +9,7 @@ challenge, no AI tools or LLMs were used to write code, documentation
 or for general help.
 
 Minimal dependencies are used, I used custom parser combinators taken
-from [another project of mine.](https://github.com/ameyakakade/baskell/blob/ea5324dbf6f3f8c315735183a5b125b220e0731d/src/Parser.hs).
+from [another project of mine.](https://github.com/ameyakakade/baskell/blob/ea5324dbf6f3f8c315735183a5b125b220e0731d/src/Parser.hs)
 
 ## How to Build ?
 DF is written in Haskell, you will need the *ghc compiler* and 
