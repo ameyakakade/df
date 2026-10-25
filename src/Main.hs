@@ -1,19 +1,19 @@
-import Parser
-import Types
-import Stdlib
+import           Parser
+import           Stdlib
+import           Types
 
-import Data.Char
-import Data.List
-import Data.Functor
-import Data.Foldable
-import Data.Functor.Identity
-import qualified Data.Map as M
-import Control.Applicative
-import Control.Monad.State.Lazy
-import Control.Monad.Trans.Either
-import Control.Exception
-import System.Environment
-import System.Exit
+import           Control.Applicative
+import           Control.Exception
+import           Control.Monad.State.Lazy
+import           Control.Monad.Trans.Either
+import           Data.Char
+import           Data.Foldable
+import           Data.Functor
+import           Data.Functor.Identity
+import           Data.List
+import qualified Data.Map                   as M
+import           System.Environment
+import           System.Exit
 
 comment :: Parser ()
 comment = do
@@ -29,7 +29,7 @@ junk = do
 listParser :: Parser [Atom]
 listParser = do
     char '('
-    junk 
+    junk
     r <- Parser.many (atomParser <* junk)
     char ')'
     junk
@@ -150,7 +150,7 @@ listEval (a:as) = case a of
                     then evaluator fb
                     else evaluator tb
               _ -> left "Invalid if block."
-          
+
     "let" -> letEval as
     s -> do
         d <- lookupSymbol s
@@ -169,7 +169,7 @@ listEval (a:as) = case a of
                                        a1 <- evaluator (head as)
                                        a2 <- evaluator (head (tail as))
                                        case f a1 a2 of
-                                         Left m -> left m
+                                         Left m  -> left m
                                          Right r -> pure r
                                    Ternary f -> undefined
                        Nothing -> left $ "Unknown function " ++ s
@@ -188,9 +188,9 @@ evaluator (Num a) = pure $ Num a
 evaluator (Str a) = do
     l <- lookupSymbol a
     case l of
-      Just a -> pure a
+      Just a  -> pure a
       Nothing -> left ("Could not find variable " ++ a)
-evaluator (Quote a) = pure a 
+evaluator (Quote a) = pure a
 evaluator _ = pure (List []) -- Figure out eval's for other expressions.
 
 main :: IO ()
@@ -231,5 +231,5 @@ main = do
                       putStr "Output: "
                       case M.lookup "output" (definitions state) of
                         Just ((_, Str a):_) -> putStrLn a
-                        Just ((_, a):_) -> print a
-                        Nothing -> putStrLn "None"
+                        Just ((_, a):_)     -> print a
+                        Nothing             -> putStrLn "None"
