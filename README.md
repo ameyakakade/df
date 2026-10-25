@@ -1,7 +1,7 @@
 # DF
 
 DF is a pure, dynamically typed, functional dialect of Lisp.
-It is also a toy language.
+It is also a toy programming language.
 
 ## Why ?
 This project was built for [Syntax Error 2026](https://hackathon.sdslabs.co/), under 30 hrs. As a
