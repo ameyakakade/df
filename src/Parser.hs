@@ -1,16 +1,16 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TupleSections         #-}
 module Parser where
-import Data.Char
-import Data.Either
-import Data.Tuple
-import Data.Foldable
-import Data.Set (Set)
-import qualified Data.Set as E
-import Control.Applicative
-import Control.Monad
-import Control.Monad.Reader
-import Control.Monad.State.Lazy
+import           Control.Applicative
+import           Control.Monad
+import           Control.Monad.Reader
+import           Control.Monad.State.Lazy
+import           Data.Char
+import           Data.Either
+import           Data.Foldable
+import           Data.Set                 (Set)
+import qualified Data.Set                 as E
+import           Data.Tuple
 
 data ErrorItem
   = -- Non-empty stream of tokens
@@ -280,7 +280,7 @@ chainl1 p op = p >>= rest
   where
     rest acc = (do
                      f <- op
-                     x <- p 
+                     x <- p
                      rest (f acc x)
                ) <|> return acc
 

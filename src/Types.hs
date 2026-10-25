@@ -1,10 +1,10 @@
 module Types where
 
-import qualified Data.Map as M
-import qualified Data.Set as E
-import Control.Monad.State.Lazy
-import Control.Monad.Trans.Either
-import Data.List.NonEmpty
+import           Control.Monad.State.Lazy
+import           Control.Monad.Trans.Either
+import           Data.List.NonEmpty
+import qualified Data.Map                   as M
+import qualified Data.Set                   as E
 
 data Atom = Num Int
           | Str String
@@ -23,8 +23,8 @@ data Fun = Unary (Atom -> Result)
 -- Stores current scope index
 data ProgramState = ProgramState {
     definitions :: M.Map String [(Int, Atom)],
-    scope :: Int,
-    trace :: [String]
+    scope       :: Int,
+    trace       :: [String]
     } deriving (Show)
 
 initState = ProgramState M.empty 0 []
