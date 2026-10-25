@@ -170,13 +170,14 @@ listEval (a:as) = case a of
                                          Left m -> left m
                                          Right r -> pure r
                                    Ternary f -> undefined
-                       Nothing -> left ("Unknown function " ++ s)
+                       Nothing -> left $ "Unknown function " ++ s
   Num n -> if null as then pure a else left "Invalid function of type 'Num'"
+  List (Str "lambda":xs) -> lambdaEval (a:as)
   -- Evaluate the whole list from left to right
   List l -> do
       lr <- listEval l
       listEval (lr:as)
-  Quote q -> pure q
+  Quote q -> pure $ List (q:as)
 
 evaluator :: Atom -> StateP Atom
 evaluator (List expr) = listEval expr
@@ -197,6 +198,7 @@ main = do
     let check name = case find (== name) args of Just _ -> True; Nothing -> False
     let debug = check "-debug"
     let putAst = check "-ast"
+    let globalSym = check "-symbols"
     code <- fmap concat (traverse readFile fn)
     let (ps, res) = runParser programParser code
     case res of
@@ -207,15 +209,14 @@ main = do
           if putAst then print ast else pure ()
           putStrLn ""
           let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
-          if debug then do putStrLn "Trace: "; traverse_ putStrLn (trace state) else pure ()
+          if debug then do putStrLn "Trace: "; traverse_ putStrLn (trace state); putStrLn "" else pure ()
           case res of
             Left a -> do
                 putStrLn "Error when interpreting,"
                 putStrLn a
             Right a -> do
                 putStrLn "Completed evaluation successfully!"
-                putStr "List of global bound symbols: "
-                print (definitions state)
+                if globalSym then do putStr "List of global bound symbols: "; print (definitions state) else pure ()
                 putStrLn ""
                 putStr "Results: "
                 print (last a)
