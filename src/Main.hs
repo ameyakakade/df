@@ -206,7 +206,7 @@ main = do
       Left e -> do putStrLn $ "Could not open file: " ++ show e; exitWith (ExitFailure 1)
       Right code -> do
           let (ps, res) = runParser programParser code
-          if null (st_str ps) then return () else putStrLn $ "Unexpected string at end:\n " ++ (st_str ps); exitWith (ExitFailure 1)
+          if null (st_str ps) then return () else putStrLn $ "Unexpected string at end:\n " ++ show (st_str ps)
           case res of
             Left e -> do
                 putStrLn "Syntax error :)"
@@ -214,7 +214,6 @@ main = do
                 exitWith (ExitFailure 1)
             Right (List ast) -> do
                 if putAst then print ast else pure ()
-                print ps
                 putStrLn ""
                 let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
                 if debug then do putStrLn "Trace: "; traverse_ putStrLn (trace state); putStrLn "" else pure ()
