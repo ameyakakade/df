@@ -4,12 +4,12 @@ DF is a pure, dynamically typed, functional dialect of Lisp.
 It is also a toy language.
 
 ## Why ?
-This project was built for hackathon name, under 30 hrs. As a
+This project was built for [Syntax Error 2026](https://hackathon.sdslabs.co/), under 30 hrs. As a
 challenge, no AI tools or LLMs were used to write code, documentation
 or for general help.
 
 Minimal dependencies are used, I used custom parser combinators taken
-from [baskell link].
+from [another project of mine.](https://github.com/ameyakakade/baskell/blob/ea5324dbf6f3f8c315735183a5b125b220e0731d/src/Parser.hs).
 
 ## How to Build ?
 DF is written in Haskell, you will need the *ghc compiler* and 
@@ -28,7 +28,7 @@ of files matters. The file extension, does not.
 `-debug` displays a trace of lambda reductions (this is mostly unreadable).
 
 ## Examples
-There are a few examples in _ directory. They contain things like
+There are a few examples in [examples](https://github.com/ameyakakade/df/tree/main/examples) directory. They contain things like
 defining `foldl` and `foldr`, defining and using `map`, and a
 factorial function using recursion.
 
