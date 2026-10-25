@@ -47,14 +47,14 @@ to. However, symbols can exist without a list being bound to them.
 A list is made up of *atoms*. An atom is a symbol, number or list
 seperated by spaces. For example, the list below has 4 atoms.
 A list is also a atom, hence a list can contain other lists.
-```
+```racket
 (add 2 3) ; A list
 (add 2 3 (negate 4)) ; Also a list
 ```
 
 *define* is used to bind symbols to atoms (or lists).
 It also evaluates the expression before binding it.
-```
+```racket
 (define a 13) 
 (define b (+ 4 2)) 
 ```
@@ -63,14 +63,14 @@ It also evaluates the expression before binding it.
 
 A list when evaluated is treated as function application. This can be
 avoided by using the `'` (quote) operator.
-```
+```racket
 (add 1 3) ;; 1 and 3 are applied to add function.
 (1 2 3)   ;; Error: trying to evaluate '1' as a function
 '(1 2 3)  ;; Returns a list with 3 elements.
 ```
 
 This operator is also used when bindings lambda's to a symbol.
-```
+```racket
 (define inc '(lambda ('a) (+ a 1)))
 ```
 Here, the lambda list is not evaluated by the define, similarly `a` is
@@ -84,7 +84,7 @@ All functions are lambdas. Named functions are symbols bound to a list
 representing a lambda.
 
 The basic syntax of a lambda is:
-```
+```racket
 (lambda (argument-list) (expr))
 ```
 
@@ -95,7 +95,7 @@ the arg-list, then the expression given is evaluated.
 This is why quote was used for a lone symbol. You could instead have a
 expression that returns a symbol name.
 
-```
+```racket
 ; Creating lambdas and immediately applying them.
 ((lambda ('a) (+ a 1)) 68)
 ((lambda ('a 'b) (+ a b)) 68 1)
@@ -104,11 +104,11 @@ expression that returns a symbol name.
 ### Let blocks
 These are a way to define scoped variables.
 The basic syntax of a let block is:
-```
+```racket
 (let ((expr1) (expr2) ...) expr)
 ```
 The value of the last result will be returned.
-```
+```racket
 (let
     ( (define a 32) )
     (+ 43 a)
@@ -118,7 +118,7 @@ The value of the last result will be returned.
 As expected, lambdas can also be bound in let blocks.
 DF has variable shadowing, so you can redefine a variable which will
 be restored to its previous value when the scope ends.
-```
+```racket
 (define a 64)
 
 (define res (let ( ( define a 32) )
@@ -129,7 +129,7 @@ res
 ```
 Value of `res` will be 31.
 
-```
+```racket
 (define res (let ( ( define a 100) )
   (+ (let ( ( define a 31) ) a) a)
   )
@@ -140,7 +140,7 @@ Value of `res` is 131.
 
 ### If block
 The basic syntax of a if block is:
-```
+```racket
 (if (condition-expr) (true-expr) (false-expr) )
 ;; OR
 (if (condition-expr) (true-expr) )
@@ -156,7 +156,7 @@ Anything except '() (number, symbol, list) is considered true.
 There are certain functions predefined in DF.
 
 Among these are basic binary operands,
-```
+```racket
 (+ 33 34)   ;; 67 !
 (- 33 34)   ;; -1
 (* 33 34)   ;; 1122
@@ -165,7 +165,7 @@ Among these are basic binary operands,
 ```
 
 Equality operator,
-```
+```racket
 (= 33 34) ;; returns '()
 (= 34 34) ;; returns (t)
 ```
@@ -174,13 +174,13 @@ And functions for creating and deconstructing lists.
 
 *car* is used to get the first element of the list.
 *cdr* is used to get the rest of the elements of the list.
-```
+```racket
 (car '(1 2 3)) ;; returns 1
 (cdr '(1 2 3)) ;; returns '(2 3)
 ```
 
 *cons* is used to construct a list
-```
+```racket
 (cons 1 2)
 ```
 
@@ -192,13 +192,13 @@ This language does not have side effects, but the value of the last
 expression is displayed after evaluation.
 
 There is a special symbol evaluated for output named `output`.
-```
+```racket
 (define output '(hello world))
 (+ 1 2)
 ```
 
 Output:
-```
+```racket
 cabal run interpreter -- demo.df
 
 Completed evaluation successfully!
@@ -209,6 +209,6 @@ Output: List [Str "hello",Str "world"]
 
 ### Comments
 Comments start with `;` and end with newline.
-```
+```racket
 (+ 1 1) ; this is a comment
 ```
