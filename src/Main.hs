@@ -101,17 +101,17 @@ lambdaEval ( (List [Str "lambda", List argList, expr] ) :args) = do
           (\(aname, aexpr) -> do
                 an <- evaluator aname
                 ae <- evaluator aexpr
+          -- Add trace every time a lambda is reduced
+                modify $ \s ->
+                  s { trace = trace s ++ ["Definitions: " ++ show (definitions s) ++
+                                          "\nExpr: " ++ show expr ++
+                                          "\nArgs: " ++ show (zip argList args) ++
+                                          "\nScope: " ++ show (scope s) ++ "\n"]}
                 case an of
                   Str a -> defineSymbol a ae
                   _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
           )
           (zip argList args)
-          -- Add trace every time a lambda is reduced
-        modify $ \s ->
-          s { trace = trace s ++ ["Definitions: " ++ show (definitions s) ++
-                                   "\nExpr: " ++ show expr ++
-                                   "\nArgs: " ++ show (zip argList args) ++
-                                   "\nScope: " ++ show (scope s) ++ "\n"]}
         evaluator expr
 
 lambdaEval l = left $ "Invalid lambda, " ++ show l
