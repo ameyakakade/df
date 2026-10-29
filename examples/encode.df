@@ -1,0 +1,31 @@
+;; Example borrowed from '99 problems in Lisp'
+
+(define foldr
+  '(lambda ('fn 'list 'acc)
+     (if list
+         (fn (car list) (foldr fn (cdr list) acc))
+         acc ; Return accumulator if list is empty
+         )))
+
+(define fn
+  '(lambda ('elem 'ls)
+     (if ls
+         ;; If acc is not empty
+         (let ((define fst (car ls))
+               (define felem (car fst))
+               (define fnum  (car (cdr fst)))
+               )
+           ;;(cons fst (cons felem fnum))
+            (if (= felem elem)
+                (cons (cons felem (+ fnum 1)) (cdr ls))
+                (cons (cons elem 1) ls)
+                )
+           )
+         ;; when acc is empty
+         (cons (cons elem 1) '())
+         )
+     )
+  )
+
+;; Encodes how many times each element was repeated.
+(foldr fn '( 1 69 69 69 420 67 67 ) '())
