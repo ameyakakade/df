@@ -1,0 +1,13 @@
+;; after some discussion with claude, i realised i accidentally
+;; implemented dynamic scoping in my language.
+
+;; the language isn't so pure now is it.
+
+(define make-adder '(lambda ('n) '(lambda ('x) (+ x n))))
+
+(define n 15)
+((make-adder 5) 4)
+;; returns 19
+
+;; the fix would be trivial, when returning a list, replace all the
+;; symbols with their bounded values.
