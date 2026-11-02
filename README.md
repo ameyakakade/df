@@ -212,3 +212,17 @@ Comments start with `;` and end with newline.
 ```racket
 (+ 1 1) ; this is a comment
 ```
+
+### Dynamic Scoping
+DF has dynamic scoping because of its dead simple execution
+model. This allows you to violate purity by redefining variables.
+Closures don't work as expected.
+
+```racket
+(define make-adder '(lambda ('n) '(lambda ('x) (+ x n))))
+(define n 15)
+((make-adder 5) 4)
+```
+
+You can define functions that use symbols which aren't in the lexical
+scope, DF will use their bindings at call site if available.
