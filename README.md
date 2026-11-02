@@ -1,6 +1,6 @@
 # DF
 
-DF is a pure, dynamically typed, functional dialect of Lisp.
+DF is a dynamically scoped, dynamically typed, functional dialect of Lisp.
 It is also a toy programming language.
 
 ## Why ?
