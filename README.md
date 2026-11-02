@@ -5,8 +5,7 @@ It is also a toy programming language.
 
 ## Why ?
 This project was built for [Syntax Error 2026](https://hackathon.sdslabs.co/), under 30 hrs. As a
-challenge, no AI tools or LLMs were used to write code, documentation
-or for general help.
+challenge, all code and documentation was written by hand.
 
 Minimal dependencies are used, I used custom parser combinators taken
 from [another project of mine.](https://github.com/ameyakakade/baskell/blob/ea5324dbf6f3f8c315735183a5b125b220e0731d/src/Parser.hs)
