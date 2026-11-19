@@ -17,6 +17,10 @@ DF is written in Haskell, you will need the *ghc compiler* and
 Navigate to this directory and run `cabal build`.
 Use `cabal run interpreter -- [arguments]` to run the interpreter.
 
+There is a basic REPL. Launch with command.
+`cabal run interpreter -- examples/encode.df -repl`
+Use `rlwrap` to make the REPL usable.
+
 ### Arguments
 Arguments provided to the interpreter are parsed in the following way:
 Everything not prefixed with '-' is treated as a file name. The order
@@ -25,6 +29,7 @@ of files matters. The file extension, does not.
 `-ast` displays the parsed ast.
 `-symbols` displays the globally defined symbols for the current program.
 `-debug` displays a trace of lambda reductions (this is mostly unreadable).
+`-repl` enters a repl after evaluating the files provided.
 
 ## Examples
 There are a few examples in [examples](https://github.com/ameyakakade/df/tree/main/examples) directory. They contain things like
