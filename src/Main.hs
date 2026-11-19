@@ -14,6 +14,7 @@ import           Data.List
 import qualified Data.Map                   as M
 import           System.Environment
 import           System.Exit
+import           System.IO
 
 comment :: Parser ()
 comment = do
@@ -198,8 +199,9 @@ main = do
     args <- getArgs
     let fn = filter (not . isPrefixOf "-") args
     let check name = case find (== name) args of Just _ -> True; Nothing -> False
-    let debug = check "-debug"
-    let putAst = check "-ast"
+    let repl      = check "-repl"
+    let debug     = check "-debug"
+    let putAst    = check "-ast"
     let globalSym = check "-symbols"
     code <- Control.Exception.try $ fmap concat (traverse readFile fn) :: IO (Either IOException String)
     case code of
@@ -227,9 +229,51 @@ main = do
                       if globalSym then do putStr "List of global bound symbols: "; print (definitions state) else pure ()
                       putStrLn ""
                       putStr "Results: "
-                      print (last a)
+                      if null a then putStrLn "nil" else print (last a)
                       putStr "Output: "
                       case M.lookup "output" (definitions state) of
                         Just ((_, Str a):_) -> putStrLn a
                         Just ((_, a):_)     -> print a
                         Nothing             -> putStrLn "None"
+                      if repl
+                        then do
+                          putStrLn ""
+                          help
+                          putStrLn "Entering repl:"
+                          replLoop state
+                          putStrLn "Quitting."
+                        else pure ()
+
+help :: IO ()
+help = putStrLn "DF REPL Help"
+       >> putStrLn ":q or :quit  - exit."
+       >> putStrLn ":remove      - remove all definitions and trace."
+       >> putStrLn ":definitions - display all bounded symbols."
+       >> putStrLn ":trace       - display (unreadable) trace."
+       >> putStrLn ":help        - display this message."
+
+printDefinitions :: ProgramState -> IO ()
+printDefinitions s = print $ definitions s
+
+replLoop :: ProgramState -> IO ()
+replLoop state = do
+    putStr "λ> "
+    hFlush stdout
+    inp <- getLine
+    case inp of
+      ":q"           -> pure ()
+      ":quit"        -> pure ()
+      ":clear"       -> putStrLn "Clearing all definitions" >> replLoop initState
+      ":definitions" -> printDefinitions state >> replLoop state
+      ":trace"       -> traverse_ putStrLn (trace state) >> replLoop state
+      ":help"        -> help >> replLoop state
+      _ -> do
+          let (ps, res) = runParser programParser inp
+          if null (st_str ps) then pure () else putStrLn ("Warning, could not parse: " ++ st_str ps)
+          (case res of
+             Right (List ast) -> do
+                 let Identity (res, nstate) = runStateT (runEitherT (traverse evaluator ast)) state
+                 print res
+                 return nstate
+             Left a -> putStrLn "Syntax error in input, retry." >> return state
+            ) >>= replLoop
