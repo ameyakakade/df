@@ -4,7 +4,7 @@ DF is a dynamically scoped, dynamically typed, functional dialect of Lisp.
 It is also a toy programming language.
 
 ## Why ?
-This project was built for [Syntax Error 2026](https://hackathon.sdslabs.co/), under 30 hrs. As a
+This project was built for a hackathon under 15 hrs. As a
 challenge, all code and documentation was written by hand.
 
 Minimal dependencies are used, I used custom parser combinators taken
