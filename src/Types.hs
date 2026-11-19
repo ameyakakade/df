@@ -10,7 +10,15 @@ data Atom = Num Int
           | Str String
           | List [Atom] -- [] is nil or '()
           | Quote Atom
-          deriving (Show, Eq)
+          deriving Eq
+
+instance Show Atom where
+    show a = case a of
+               Num   i -> show i
+               Str   i -> i
+               List [] -> "nil"
+               List  i -> "(" ++ Prelude.tail (foldr (\a s -> " " ++ show a ++ s ) "" i) ++ ")"
+               Quote i -> "'" ++ show i
 
 type Result = Either String Atom
 
