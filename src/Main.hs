@@ -159,13 +159,13 @@ listEval (a:as) = case a of
           Just c -> lambdaEval (c:as)
           Nothing -> case M.lookup s predefined of
                        Just c -> case c of
-                                   Unary f -> if length as > 1
-                                              then left "Too many arguments, expected 1."
+                                   Unary f -> if length as /= 1
+                                              then left "Incorrect number of arguments, expected 1."
                                               else evaluator (head as) >>= \a -> case f a of
                                                                                    Left m -> left m
                                                                                    Right r -> pure r
-                                   Binary f -> if length as > 2
-                                               then left "Too many arguments, expected 2."
+                                   Binary f -> if length as /= 2
+                                               then left "Incorrect number of arguments, expected 2."
                                                else do
                                        a1 <- evaluator (head as)
                                        a2 <- evaluator (head (tail as))
