@@ -4,6 +4,7 @@ import           Types
 
 import           Control.Applicative
 import           Control.Exception
+import           Control.Monad
 import           Control.Monad.State.Lazy
 import           Control.Monad.Trans.Either
 import           Data.Char
@@ -63,7 +64,7 @@ inNewScope a = do
     modify $ \s -> s { scope = scope s - 1}
     modify $ \s -> s { definitions = M.map (filter (\(i, _) -> i <= scope s))
                                      (definitions s) }
-    modify $ \s -> s { definitions = M.filter (\l -> not (null l)) (definitions s) }
+    modify $ \s -> s { definitions = M.filter (not . null) (definitions s) }
     pure res
 
 defineSymbol :: String -> Atom -> StateP ()
@@ -215,10 +216,10 @@ main = do
                 print e
                 exitWith (ExitFailure 1)
             Right (List ast) -> do
-                if putAst then print ast else pure ()
+                when putAst (print ast)
                 putStrLn ""
                 let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
-                if debug then do putStrLn "Trace: "; traverse_ putStrLn (trace state); putStrLn "" else pure ()
+                when debug $ putStrLn "Trace: " >> traverse_ putStrLn (trace state) >> putStrLn ""
                 case res of
                   Left a -> do
                       putStrLn "Error when interpreting,"
@@ -226,7 +227,7 @@ main = do
                       exitWith (ExitFailure 1)
                   Right a -> do
                       putStrLn "Completed evaluation successfully!"
-                      if globalSym then do putStr "List of global bound symbols: "; print (definitions state) else pure ()
+                      when globalSym $ putStr "List of global bound symbols: " >> print (definitions state)
                       putStrLn ""
                       putStr "Results: "
                       if null a then putStrLn "nil" else print (last a)
@@ -235,17 +236,16 @@ main = do
                         Just ((_, Str a):_) -> putStrLn a
                         Just ((_, a):_)     -> print a
                         Nothing             -> putStrLn "None"
-                      if repl
-                        then do
+                      when repl
+                        (do
                           putStrLn ""
                           help
                           putStrLn "Entering repl:"
                           replLoop state
-                          putStrLn "Quitting."
-                        else pure ()
+                          putStrLn "Quitting.")
 
 help :: IO ()
-help = putStrLn "DF REPL Help"
+help = putStrLn "Help"
        >> putStrLn ":q or :quit  - exit"
        >> putStrLn ":clear       - remove all definitions and trace"
        >> putStrLn ":definitions - display all bounded symbols"
@@ -255,7 +255,7 @@ help = putStrLn "DF REPL Help"
 printDefinitions :: ProgramState -> IO ()
 printDefinitions s = M.traverseWithKey (\k v ->
                                            putStr k >> putStr " -> " >>
-                                           (print $ snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, List []) v)
+                                           print (snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, List []) v)
                                           ) (definitions s) >> pure ()
 replLoop :: ProgramState -> IO ()
 replLoop state = do
@@ -276,7 +276,7 @@ replLoop state = do
              Right (List ast) -> do
                  let Identity (res, nstate) = runStateT (runEitherT (traverse evaluator ast)) state
                  case res of
-                   Left s -> putStr "Error: " >> putStrLn s >> return state
+                   Left s  -> putStr "Error: " >> putStrLn s >> return state
                    Right s -> traverse_ print s >> return nstate
              Left a -> putStrLn "Syntax error in input, retry." >> return state
             ) >>= replLoop
