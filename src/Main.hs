@@ -123,7 +123,7 @@ lookupSymbol name = do
     case M.lookup name defs of
       Nothing -> pure Nothing
       -- Find the newest one
-      Just set -> pure $ Just $ snd $ foldl' (\(acc, a) (elem, b) -> if acc > elem then (acc, a) else (elem, b)) (0, List []) set
+      Just set -> pure $ Just $ snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, List []) set
 
 letEval :: [Atom] -> StateP Atom
 letEval [List defines, res] = inNewScope $ do
