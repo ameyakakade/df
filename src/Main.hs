@@ -246,15 +246,17 @@ main = do
 
 help :: IO ()
 help = putStrLn "DF REPL Help"
-       >> putStrLn ":q or :quit  - exit."
-       >> putStrLn ":remove      - remove all definitions and trace."
-       >> putStrLn ":definitions - display all bounded symbols."
-       >> putStrLn ":trace       - display (unreadable) trace."
-       >> putStrLn ":help        - display this message."
+       >> putStrLn ":q or :quit  - exit"
+       >> putStrLn ":clear       - remove all definitions and trace"
+       >> putStrLn ":definitions - display all bounded symbols"
+       >> putStrLn ":trace       - display (unreadable) trace"
+       >> putStrLn ":help        - display this message"
 
 printDefinitions :: ProgramState -> IO ()
-printDefinitions s = print $ definitions s
-
+printDefinitions s = M.traverseWithKey (\k v ->
+                                           putStr k >> putStr " -> " >>
+                                           (print $ snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, List []) v)
+                                          ) (definitions s) >> pure ()
 replLoop :: ProgramState -> IO ()
 replLoop state = do
     putStr "λ> "
@@ -273,7 +275,8 @@ replLoop state = do
           (case res of
              Right (List ast) -> do
                  let Identity (res, nstate) = runStateT (runEitherT (traverse evaluator ast)) state
-                 print res
-                 return nstate
+                 case res of
+                   Left s -> putStr "Error: " >> putStrLn s >> return state
+                   Right s -> traverse_ print s >> return nstate
              Left a -> putStrLn "Syntax error in input, retry." >> return state
             ) >>= replLoop
