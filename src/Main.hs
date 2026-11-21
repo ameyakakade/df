@@ -138,6 +138,7 @@ listEval [] = pure (List [])
 listEval (a:as) = case a of
   Str s -> case s of
     "define" -> defineEval as
+    "quote" -> if length as == 1 then pure (head as) else left "Invalid number of arguments for 'quote', expected 1."
     "if" -> case length as of
               2 -> do
                   let [cond, tb] = as
@@ -177,11 +178,8 @@ listEval (a:as) = case a of
                        Nothing -> left $ "Unknown function " ++ s
   Num n -> left "Invalid function of type 'Num'"
   List (Str "lambda":xs) -> lambdaEval (a:as)
-  -- Evaluate the whole list from left to right
-  List l -> do
-      lr <- listEval l
-      listEval (lr:as)
-  Quote q -> pure $ List (q:as)
+  List l -> left $ "Whatever you are trying, don't."
+  Quote q -> left $ "Invalid function \'" ++ show q
 
 evaluator :: Atom -> StateP Atom
 evaluator (List expr) = listEval expr
