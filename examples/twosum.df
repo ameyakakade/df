@@ -1,0 +1,27 @@
+; https://leetcode.com/problems/two-sum/
+
+(define map
+  '(lambda ('fn 'list)
+     (if list (cons (fn (car list)) (map fn (cdr list))))))
+
+(define find-index ; returns nil if could not find element
+  '(lambda ('elem 'list)
+     (let ((define find-index-helper
+             '(lambda ('elem 'list 'index)
+                (if list
+                    (if (= elem (car list))
+                        index
+                        (find-index-helper elem (cdr list) (+ 1 index)))
+                    '()))))
+       (find-index-helper elem list 0))))
+
+(define two-sum-helper
+  '(lambda ('ls 'target 'index)
+     (let ((define actual-target (- target (car ls)))
+           (define found (find-index actual-target (cdr ls))))
+       (if found
+           (cons index (+ found (+ index 1)))
+           (two-sum-helper (cdr ls) target (+ index 1))))))
+
+(define two-sum '(lambda ('ls 'target) (two-sum-helper ls target 0)))
+;(find-index 99 '(4 69 54 3 98))
