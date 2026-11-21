@@ -201,9 +201,9 @@ main = do
     let fn = filter (not . isPrefixOf "-") args
     let check name = case find (== name) args of Just _ -> True; Nothing -> False
     let repl      = check "-repl"
-    let debug     = check "-debug"
+    let debug     = check "-trace"
     let putAst    = check "-ast"
-    let globalSym = check "-symbols"
+    let globalSym = check "-definitions"
     code <- Control.Exception.try $ fmap concat (traverse readFile fn) :: IO (Either IOException String)
     case code of
       Left e -> do putStrLn $ "Could not open file: " ++ show e; exitWith (ExitFailure 1)
@@ -227,7 +227,7 @@ main = do
                       exitWith (ExitFailure 1)
                   Right a -> do
                       putStrLn "Completed evaluation successfully!"
-                      when globalSym $ putStr "List of global bound symbols: " >> print (definitions state)
+                      when globalSym $ putStrLn "Globally bound symbols: " >> printDefinitions state
                       putStrLn ""
                       putStr "Results: "
                       if null a then putStrLn "nil" else print (last a)
