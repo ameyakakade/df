@@ -175,7 +175,7 @@ listEval (a:as) = case a of
                                          Right r -> pure r
                                    Ternary f -> undefined
                        Nothing -> left $ "Unknown function " ++ s
-  Num n -> if null as then pure a else left "Invalid function of type 'Num'"
+  Num n -> left "Invalid function of type 'Num'"
   List (Str "lambda":xs) -> lambdaEval (a:as)
   -- Evaluate the whole list from left to right
   List l -> do
