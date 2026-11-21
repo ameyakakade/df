@@ -8,6 +8,3 @@
 (define n 15)
 ((make-adder 5) 4)
 ;; returns 19
-
-;; the fix would be trivial, when returning a list, replace all the
-;; symbols with their bounded values.
