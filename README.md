@@ -192,7 +192,9 @@ And functions for creating and deconstructing lists.
 (cons 1 2)
 ```
 
-Meaning of these is simplified here, read more about cons cell here:
+Cons cells HERE are unusually implemented and quite limited, probably
+will fix them, read more about cons cell here, and try them in a
+proper Lisp:
 https://en.wikipedia.org/wiki/Cons
 
 ### Output
