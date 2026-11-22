@@ -232,6 +232,7 @@ main = do
                       putStr "Output: "
                       case M.lookup "output" (definitions state) of
                         Just ((_, Str a):_) -> putStrLn a
+                        Just ((_, List a):_) -> traverse_ print a
                         Just ((_, a):_)     -> print a
                         Nothing             -> putStrLn "None"
                       when repl
