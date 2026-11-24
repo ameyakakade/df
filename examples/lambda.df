@@ -10,3 +10,9 @@
 c
 
 ((lambda ('a 'b) (+ a b)) 5 9)
+;-- TEST BLOCK --
+;
+;Completed evaluation successfully!
+;
+;Results: 14
+;Output: None

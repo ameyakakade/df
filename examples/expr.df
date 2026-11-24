@@ -4,3 +4,10 @@
 
 ; This syntax is called as S-Expressions
 ; https://en.wikipedia.org/wiki/S-expression
+
+;-- TEST BLOCK --
+;
+;Completed evaluation successfully!
+;
+;Results: 1042
+;Output: None

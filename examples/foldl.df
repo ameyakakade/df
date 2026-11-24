@@ -18,3 +18,9 @@
 
 (cons a b)
 
+;-- TEST BLOCK --
+;
+;Completed evaluation successfully!
+;
+;Results: (120 14)
+;Output: None

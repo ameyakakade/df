@@ -8,3 +8,9 @@
 
 
 (fac 6)
+;-- TEST BLOCK --
+;
+;Completed evaluation successfully!
+;
+;Results: 720
+;Output: None

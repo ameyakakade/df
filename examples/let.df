@@ -11,3 +11,9 @@
     ((define a 69))
     (+ c a)
   )
+;-- TEST BLOCK --
+;
+;Completed evaluation successfully!
+;
+;Results: 82
+;Output: None

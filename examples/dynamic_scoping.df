@@ -8,3 +8,9 @@
 (define n 15)
 ((make-adder 5) 4)
 ;; returns 19
+;-- TEST BLOCK --
+;
+;Completed evaluation successfully!
+;
+;Results: 19
+;Output: None
