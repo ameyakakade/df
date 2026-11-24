@@ -39,7 +39,9 @@ of files matters. The file extension, does not.
 There is a 'testing' utility that checks if the output of the examples have changed.
 To use it, `cabal run test -- [arguments]`. It will check the provided
 ".df" files. If no files are provided, it will check all the files in
-examples directory. `-reset` will erase and rewrite the test data.
+examples directory. `-reset` will erase and rewrite the test
+data. `-erase` will delete the test data from modified files. The
+test block is always expected to be at the end of the file.
 It expects to be run inside the root of the project, as it runs the
 same `cabal exec df` command.
 
