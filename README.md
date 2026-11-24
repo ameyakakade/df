@@ -15,10 +15,10 @@ DF is written in Haskell, you will need the *ghc compiler* and
 *cabal package manager*. Download these from https://www.haskell.org/
 
 Navigate to this directory and run `cabal build`.
-Use `cabal run interpreter -- [arguments]` to run the interpreter.
+Use `cabal run df -- [arguments]` to run the interpreter.
 
 There is a basic REPL. Launch with command.
-`cabal run interpreter -- examples/encode.df -repl`
+`cabal run df -- examples/encode.df -repl`
 Use `rlwrap` to make the REPL usable.
 
 ### Arguments
@@ -34,6 +34,14 @@ of files matters. The file extension, does not.
 
 `-repl` enters a repl after evaluating the files provided.
 
+### Tests
+
+There is a 'testing' utility that checks if the output of the examples have changed.
+To use it, `cabal run test -- [arguments]`. It will check the provided
+".df" files. If no files are provided, it will check all the files in
+examples directory. `-reset` will erase and rewrite the test data.
+It expects to be run inside the root of the project, as it runs the
+same `cabal exec df` command.
 
 ## Examples
 There are a few examples in [examples](https://github.com/ameyakakade/df/tree/main/examples) directory. They contain things like

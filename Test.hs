@@ -1,4 +1,3 @@
-{-# LANGUAGE LambdaCase #-}
 import Data.Function
 import Data.List
 import Data.String
@@ -9,7 +8,6 @@ import System.Process
 import System.Environment
 import System.Directory
 import System.IO
--- runhaskell --ghc-arg=-v0 --ghc-arg=-w Test.hs
 
 main :: IO ()
 main = do
@@ -34,7 +32,7 @@ testFile reset fp = do
         case (seperate fileContent, reset) of
           (_, True) -> do
               putStrLn ("Erasing and writing test data for: " ++ fp)
-              writeFile fp (unlines (dropWhile (not . isInfixOf "-- TEST BLOCK --") (lines fileContent)) ++ createTestBlock op)
+              writeFile fp (unlines (takeWhile (not . isInfixOf "-- TEST BLOCK --") (lines fileContent)) ++ createTestBlock op)
           (Just test, _) -> do
               if op == test
                 then putStrLn ("Test passed successfully: " ++ fp)
@@ -45,7 +43,7 @@ testFile reset fp = do
               writeFile fp (fileContent ++ createTestBlock op)
 
 runFile :: FilePath -> IO (Either IOError String)
-runFile fp = try $ readProcess "cabal" ["exec", "interpreter", "--", fp] ""
+runFile fp = try $ readProcess "cabal" ["exec", "df", "--", fp] ""
 
 seperate :: String -> Maybe String
 seperate file = let a = dropWhile (not . isInfixOf "-- TEST BLOCK --") (lines file)
