@@ -59,7 +59,6 @@ testFile reset fp = do
               if op == test
                 then putStrLn ("Test passed successfully: " ++ fp)
                 else putStrLn ("Test FAILED for: " ++ fp)
-                     >> putStrLn ("Expected: \n" ++ op ++ "\nGot: \n" ++ test)
           (Nothing, _) -> do
               putStrLn ("Writing test data for: " ++ fp)
               writeFile fp (fileContent ++ createTestBlock op)
