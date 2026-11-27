@@ -1,4 +1,3 @@
-{-# LANGUAGE DataKinds #-}
 import           Parser
 import           Stdlib
 import           Types
@@ -165,17 +164,13 @@ listEval (Cons a as) = case a of
                        Just c -> case c of
                                    Unary f -> if consLen as /= 1
                                               then left "Incorrect number of arguments, expected 1."
-                                              else evaluator (let (Cons a _) = as in a) >>= \a -> case f a of
-                                                                                   Left m -> left m
-                                                                                   Right r -> pure r
+                                              else let (Cons a _) = as in evaluator a >>= f
                                    Binary f -> if consLen as /= 2
                                                then left "Incorrect number of arguments, expected 2."
                                                else do
                                        a1 <- evaluator (let (Cons a _) = as in a)
                                        a2 <- evaluator (let (Cons _ (Cons b _)) = as in b)
-                                       case f a1 a2 of
-                                         Left m  -> left m
-                                         Right r -> pure r
+                                       f a1 a2 
                                    Ternary f -> undefined
                        Nothing -> left $ "Unknown function " ++ s
   Num n -> left $ "Invalid function of type 'Num'" ++ show n
@@ -218,7 +213,7 @@ main = do
             Right ast -> do
                 when putAst (print ast)
                 putStrLn ""
-                let Identity (res, state) = runStateT (runEitherT (traverse evaluator (consToList ast))) initState
+                (res, state) <- runStateT (runEitherT (traverse evaluator (consToList ast))) initState
                 when debug $ putStrLn "Trace: " >> traverse_ putStrLn (trace state) >> putStrLn ""
                 case res of
                   Left a -> do
@@ -275,7 +270,7 @@ replLoop state = do
           if null (st_str ps) then pure () else putStrLn ("Warning, could not parse: " ++ st_str ps)
           (case res of
              Right ast -> do
-                 let Identity (res, nstate) = runStateT (runEitherT (traverse evaluator (consToList ast))) state
+                 (res, nstate) <- runStateT (runEitherT (traverse evaluator (consToList ast))) state
                  case res of
                    Left s  -> putStr "Error: " >> putStrLn s >> return state
                    Right s -> traverse_ print s >> return nstate

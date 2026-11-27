@@ -25,7 +25,7 @@ instance Show Atom where
                        showCons (Cons a b@(Cons _ _)) = show a ++ " " ++ showCons b
                        showCons (Cons a b) = show a ++ " . " ++ show b
 
-type Result = Either String Atom
+type Result = StateP Atom
 
 -- Function      args     error or result
 data Fun = Unary (Atom -> Result)
@@ -42,4 +42,4 @@ data ProgramState = ProgramState {
 
 initState = ProgramState M.empty 0 []
 
-type StateP a = EitherT String (State ProgramState) a
+type StateP a = EitherT String (StateT ProgramState IO) a

@@ -4,6 +4,8 @@ module Stdlib where
 import           Types
 
 import qualified Data.Map as M
+import           Control.Monad.Trans.Either
+import           Control.Monad.Trans
 
 predefined :: M.Map String Fun
 predefined = M.fromList [
@@ -15,7 +17,8 @@ predefined = M.fromList [
     ("car", car),
     ("cons", cons),
     ("cdr", cdr),
-    ("negate", Stdlib.negate)
+    ("negate", Stdlib.negate),
+    ("print", Unary $ \a -> (liftIO (print a)) >> pure Nil)
     ]
 
 operators :: String -> Fun
@@ -24,23 +27,27 @@ operators s = Binary $ case s of
   "-" -> fn (-)
   "*" -> fn (*)
   "/" -> fn div
-  where fn f (Num a) (Num b) = Right (Num (f a b))
-        fn f _ _             = Left "Can apply only with numbers."
+  where fn f (Num a) (Num b) = pure (Num (f a b))
+        fn f _ _             = left "Can apply only with numbers."
 
 equals :: Fun
-equals = Binary $ \a b -> Right $ if a == b then Str "t" else Nil
+equals = Binary $ \a b -> pure $ if a == b then Str "t" else Nil
 
 car :: Fun
-car = Unary $ \case Cons a _ -> Right a; Nil -> Right Nil; _ -> Left "car function expects a cons cell or nil as argument"
+car = Unary $ \case Cons a _ -> pure a
+                    Nil -> pure Nil
+                    a -> left $ "car function expects a cons cell or nil as argument -> " ++ show a
 
 cdr :: Fun
-cdr = Unary $ \case Cons _ a  -> Right a; Nil -> Right Nil; _ -> Left "cdr function expects a cons cell or nil as argument"
+cdr = Unary $ \case Cons _ a  -> pure a
+                    Nil -> pure Nil
+                    _ -> left "cdr function expects a cons cell or nil as argument"
 
 cons :: Fun
-cons = Binary $ \a b -> Right (Cons a b)
+cons = Binary $ \a b -> pure (Cons a b)
 
 negate :: Fun
-negate = Unary $ \case Num a -> Right (Num (-a)); _ -> Left "Negate function expects a number as argument"
+negate = Unary $ \case Num a -> pure (Num (-a)); _ -> left "Negate function expects a number as argument"
 
 consLen :: Atom -> Int
 consLen (Cons _ Nil) = 1

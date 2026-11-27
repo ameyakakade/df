@@ -1,5 +1,5 @@
 {-# LANGUAGE MultiParamTypeClasses #-}
-{-# LANGUAGE TupleSections         #-}
+{-# LANGUAGE TupleSections #-}
 module Parser where
 import           Control.Applicative
 import           Control.Monad
