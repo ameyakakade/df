@@ -2,12 +2,12 @@
 ;; https://www.ic.unicamp.br/~meidanis/courses/mc336/problemas-lisp/L-99_Ninety-Nine_Lisp_Problems.html
 
 (define foldr
-  '(lambda ('f 'list 'acc)
+  '(lambda (f list acc)
      (if list
          (f (car list) (foldr f (cdr list) acc)) acc))) ; Return accumulator if list is empty
 
 (define helper
-  '(lambda ('elem 'ls)
+  '(lambda (elem ls)
      (if ls
          ;; If acc is not empty
          (let ((define fst (car ls))
@@ -22,7 +22,7 @@
 
 ;; Encodes how many times each element was repeated.
 (define encode
-  '(lambda ('ls)
+  '(lambda (ls)
      (foldr helper ls '())))
 
 (encode '(a a a a b c c a a d e e e e))

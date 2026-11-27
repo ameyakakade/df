@@ -3,7 +3,7 @@
 
 ;; the language isn't so pure now is it.
 
-(define make-adder '(lambda ('n) '(lambda ('x) (+ x n))))
+(define make-adder '(lambda (n) '(lambda ('x) (+ x n))))
 
 (define n 15)
 ;((make-adder 5) 4)
