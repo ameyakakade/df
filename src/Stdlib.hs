@@ -34,7 +34,7 @@ car :: Fun
 car = Unary $ \case Cons a _ -> Right a; _ -> Left "car function expects a cons cell as argument"
 
 cdr :: Fun
-cdr = Unary $ \case Cons _ a  -> Right a; _ -> Left "cdr function expects a list as argument"
+cdr = Unary $ \case Cons _ a  -> Right a; _ -> Left "cdr function expects a cons cell as argument"
 
 cons :: Fun
 cons = Binary $ \a b -> Right (Cons a b)

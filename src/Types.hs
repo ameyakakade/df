@@ -16,8 +16,8 @@ data Atom = Num Int
 
 instance Show Atom where
     show a = case a of
-               Num   i -> show i
-               Str   i -> i
+               Num i -> show i
+               Str i -> i
                Nil -> "nil"
                Quote i -> "'" ++ show i
                Cons _ _ -> "(" ++ showCons a ++ ")"

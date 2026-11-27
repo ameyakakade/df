@@ -82,7 +82,7 @@ defineSymbol name ers = do
 
 -- Define and binds a expr
 defineEval :: Atom -> StateP Atom
-defineEval (Cons n rs) = case n of
+defineEval (Cons n (Cons rs Nil)) = case n of
   Str name -> do
       ers <- evaluator rs
       defs <- gets definitions
@@ -94,7 +94,7 @@ defineEval _ = left "Invalid define block."
 
 -- Deconstructs the lambda using pattern matching, evals the args, and apply.
 lambdaEval :: Atom -> StateP Atom
-lambdaEval (Cons (Str "lambda") (Cons argList (Cons expr args))) = do
+lambdaEval (Cons (Cons (Str "lambda") (Cons argList (Cons expr Nil))) args) = do
     if consLen argList /= consLen args
       then left ("Incorrect number of arguments. Expected " ++ show (consLen argList) ++ ", got " ++ show (consLen args) ++
                 "\n" ++ "Args are: " ++ show args)
@@ -128,7 +128,7 @@ lookupSymbol name = do
       Just set -> pure $ Just $ snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, Nil) set
 
 letEval :: Atom -> StateP Atom
-letEval (Cons defines res) = inNewScope $ do
+letEval (Cons defines (Cons res Nil)) = inNewScope $ do
     traverse_ evaluator (consToList defines)
     evaluator res
 letEval _ = left "Invalid syntax for let block."
@@ -146,6 +146,7 @@ listEval (Cons a as) = case a of
                   cE <- evaluator cond
                   if cE == Nil
                     then pure Nil
+
                     else evaluator tb
               3 -> do
                   let [cond, tb, fb] = consToList as
