@@ -114,9 +114,27 @@ lambdaEval (Cons (Cons (Str "lambda") (Cons argList (Cons expr Nil))) args) = do
                   _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
           )
           (consToList $ consZip argList args)
-        evaluator expr
+    evaluator expr
 
 lambdaEval l = left $ "Invalid lambda, " ++ show l
+
+-- Deconstructs the macro using pattern matching, do NOT eval the args just bind, and return expr.
+macroEval :: Atom -> StateP Atom
+macroEval (Cons (Cons (Str "macro") (Cons argList (Cons expr Nil))) args) = do
+    defineSymbol "code" args
+    inNewScope $ do
+        traverse_
+          (\(Cons aname aexpr) -> do
+                an <- evaluator aname
+                let ae = aexpr
+                case an of
+                  Str a -> defineSymbol a ae
+                  _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
+          )
+          (consToList $ consZip argList args)
+        evaluator expr
+
+macroEval a = left (show a)
 
 lookupSymbol :: String -> StateP (Maybe Atom)
 lookupSymbol name = do
@@ -138,7 +156,7 @@ listEval Nil = pure Nil
 listEval (Cons a as) = case a of
   Str s -> case s of
     "define" -> defineEval as
-    "quote" -> pure as
+    "quote" -> let (Cons a Nil) = as in pure a
     "if" -> case consLen as of
               2 -> do
                   let [cond, tb] = consToList as
@@ -156,10 +174,13 @@ listEval (Cons a as) = case a of
               _ -> left "Invalid if block."
 
     "let" -> letEval as
+    -- This is the worst code in this project and must be changed
     s -> do
         d <- lookupSymbol s
         case d of
-          Just c -> lambdaEval (Cons c as)
+          Just c@(Cons (Str "lambda") _) -> lambdaEval (Cons c as)
+          Just c@(Cons (Str "macro") _) -> macroEval (Cons c as) >>= evaluator
+          Just c -> left $ "What? -> " ++ show c
           Nothing -> case M.lookup s predefined of
                        Just c -> case c of
                                    Unary f -> if consLen as /= 1
@@ -174,10 +195,12 @@ listEval (Cons a as) = case a of
                                    Ternary f -> undefined
                        Nothing -> left $ "Unknown function " ++ s
   Num n -> left $ "Invalid function of type 'Num'" ++ show n
+  Cons (Str "macro") _ -> left "HEIFHO"
   Cons (Str "lambda") _ -> lambdaEval (Cons a as)
-  Cons l _ -> left $ "Whatever you are trying, don't."
+  Cons l ls -> left $ "Whatever you are trying, don't. -> " ++ show (Cons l ls)
   Quote q -> left $ "Invalid function \'" ++ show q
 
+-- Evaluator will NOT make a new scope
 evaluator :: Atom -> StateP Atom
 evaluator b@(Cons a expr) = listEval b
 evaluator (Num a) = pure $ Num a

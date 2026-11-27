@@ -52,6 +52,7 @@ negate = Unary $ \case Num a -> pure (Num (-a)); _ -> left "Negate function expe
 consLen :: Atom -> Int
 consLen (Cons _ Nil) = 1
 consLen (Cons _ b) = 1 + consLen b
+consLen Nil = 0
 consLen _ = undefined
 
 consZip :: Atom -> Atom -> Atom
