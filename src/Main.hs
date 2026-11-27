@@ -101,7 +101,7 @@ lambdaEval (Cons (Cons (Str "lambda") (Cons argList (Cons expr Nil))) args) = do
     inNewScope $ do
         traverse_
           (\(Cons aname aexpr) -> do
-                an <- evaluator aname
+                let an = aname
                 ae <- evaluator aexpr
           -- Add trace every time a lambda is reduced
                 modify $ \s ->
@@ -125,7 +125,7 @@ macroEval (Cons (Cons (Str "macro") (Cons argList (Cons expr Nil))) args) = do
     inNewScope $ do
         traverse_
           (\(Cons aname aexpr) -> do
-                an <- evaluator aname
+                let an = aname
                 let ae = aexpr
                 case an of
                   Str a -> defineSymbol a ae
