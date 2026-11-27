@@ -15,17 +15,17 @@
                (define fnum  (car (cdr fst))))
            ;;(cons fst (cons felem fnum))
             (if (= felem elem)
-                (cons (cons felem (+ fnum 1)) (cdr ls))
-                (cons (cons elem 1) ls)))
+                (cons (cons felem (cons (+ fnum 1) '())) (cdr ls))
+                (cons (cons elem (cons 1 '())) ls)))
          ;; when acc is empty
-         (cons (cons elem 1) '()))))
+         (cons (cons elem (cons 1 '())) '()))))
 
 ;; Encodes how many times each element was repeated.
-(define fn
+(define encode
   '(lambda ('ls)
      (foldr helper ls '())))
 
-(fn '(a a a a b c c a a d e e e e))
+(encode '(a a a a b c c a a d e e e e))
 ;-- TEST BLOCK --
 ;
 ;Completed evaluation successfully!
