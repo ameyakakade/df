@@ -114,7 +114,7 @@ lambdaEval (Cons (Cons (Str "lambda") (Cons argList (Cons expr Nil))) args) = do
                   _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
           )
           (consToList $ consZip argList args)
-    evaluator expr
+        evaluator expr
 
 lambdaEval l = left $ "Invalid lambda, " ++ show l
 
