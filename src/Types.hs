@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 module Types where
 
 import           Control.Monad.State.Lazy
@@ -8,17 +9,21 @@ import qualified Data.Set                   as E
 
 data Atom = Num Int
           | Str String
-          | List [Atom] -- [] is nil or '()
+          | Cons Atom Atom 
           | Quote Atom
+          | Nil
           deriving Eq
 
 instance Show Atom where
     show a = case a of
                Num   i -> show i
                Str   i -> i
-               List [] -> "nil"
-               List  i -> "(" ++ Prelude.tail (foldr (\a s -> " " ++ show a ++ s ) "" i) ++ ")"
+               Nil -> "nil"
                Quote i -> "'" ++ show i
+               Cons _ _ -> "(" ++ showCons a ++ ")"
+                 where showCons (Cons a Nil) = show a
+                       showCons (Cons a b@(Cons _ _)) = show a ++ " " ++ showCons b
+                       showCons (Cons a b) = show a ++ " . " ++ show b
 
 type Result = Either String Atom
 

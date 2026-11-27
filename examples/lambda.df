@@ -7,7 +7,6 @@
        (+ a (inc b))
     )
   )
-c
 
 ((lambda ('a 'b) (+ a b)) 5 9)
 ;-- TEST BLOCK --

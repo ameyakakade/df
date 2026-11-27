@@ -1,3 +1,4 @@
+{-# LANGUAGE DataKinds #-}
 import           Parser
 import           Stdlib
 import           Types
@@ -48,11 +49,11 @@ strParser = do
 atomParser :: Parser Atom
 atomParser = fmap Quote (char '\'' *> parse) <|> parse
   where parse = Num  <$> numParser
-          <|>   List <$> listParser
+          <|>   listToCons <$> listParser
           <|>   Str  <$> strParser
 
 programParser :: Parser Atom
-programParser = junk *> fmap List (Parser.many (atomParser <* junk)) <* junk
+programParser = junk *> fmap listToCons (Parser.many (atomParser <* junk)) <* junk
 
 -- Evaluator
 
@@ -80,40 +81,40 @@ defineSymbol name ers = do
       Just a -> modify (\s -> s { definitions = M.insert name ((:) (scope s, ers) a) (definitions s) })
 
 -- Define and binds a expr
-defineEval :: [Atom] -> StateP Atom
-defineEval [n, rs] = case n of
+defineEval :: Atom -> StateP Atom
+defineEval (Cons n rs) = case n of
   Str name -> do
       ers <- evaluator rs
       defs <- gets definitions
       defineSymbol name ers
-      pure (List [])
+      pure Nil
   _ -> left "Name has to be a String."
 
 defineEval _ = left "Invalid define block."
 
 -- Deconstructs the lambda using pattern matching, evals the args, and apply.
-lambdaEval :: [Atom] -> StateP Atom
-lambdaEval ( (List [Str "lambda", List argList, expr] ) :args) = do
-    if length argList /= length args
-      then left ("Incorrect number of arguments. Expected " ++ show (length argList) ++ ", got " ++ show (length args) ++
+lambdaEval :: Atom -> StateP Atom
+lambdaEval (Cons (Str "lambda") (Cons argList (Cons expr args))) = do
+    if consLen argList /= consLen args
+      then left ("Incorrect number of arguments. Expected " ++ show (consLen argList) ++ ", got " ++ show (consLen args) ++
                 "\n" ++ "Args are: " ++ show args)
-      else return (List [])
+      else return Nil
     inNewScope $ do
         traverse_
-          (\(aname, aexpr) -> do
+          (\(Cons aname aexpr) -> do
                 an <- evaluator aname
                 ae <- evaluator aexpr
           -- Add trace every time a lambda is reduced
                 modify $ \s ->
                   s { trace = trace s ++ ["Definitions: " ++ show (definitions s) ++
                                           "\nExpr: " ++ show expr ++
-                                          "\nArgs: " ++ show (zip argList args) ++
+                                          "\nArgs: " ++ show (consZip argList args) ++
                                           "\nScope: " ++ show (scope s) ++ "\n"]}
                 case an of
                   Str a -> defineSymbol a ae
                   _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
           )
-          (zip argList args)
+          (consToList $ consZip argList args)
         evaluator expr
 
 lambdaEval l = left $ "Invalid lambda, " ++ show l
@@ -124,32 +125,32 @@ lookupSymbol name = do
     case M.lookup name defs of
       Nothing -> pure Nothing
       -- Find the newest one
-      Just set -> pure $ Just $ snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, List []) set
+      Just set -> pure $ Just $ snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, Nil) set
 
-letEval :: [Atom] -> StateP Atom
-letEval [List defines, res] = inNewScope $ do
-    traverse_ evaluator defines
+letEval :: Atom -> StateP Atom
+letEval (Cons defines res) = inNewScope $ do
+    traverse_ evaluator (consToList defines)
     evaluator res
 letEval _ = left "Invalid syntax for let block."
 
 -- A list when evaluated is function application
-listEval :: [Atom] -> StateP Atom
-listEval [] = pure (List [])
-listEval (a:as) = case a of
+listEval :: Atom -> StateP Atom
+listEval Nil = pure Nil
+listEval (Cons a as) = case a of
   Str s -> case s of
     "define" -> defineEval as
-    "quote" -> if length as == 1 then pure (head as) else left "Invalid number of arguments for 'quote', expected 1."
-    "if" -> case length as of
+    "quote" -> pure as
+    "if" -> case consLen as of
               2 -> do
-                  let [cond, tb] = as
+                  let [cond, tb] = consToList as
                   cE <- evaluator cond
-                  if cE == List []
-                    then pure (List [])
+                  if cE == Nil
+                    then pure Nil
                     else evaluator tb
               3 -> do
-                  let [cond, tb, fb] = as
+                  let [cond, tb, fb] = consToList as
                   cE <- evaluator cond
-                  if cE == List []
+                  if cE == Nil
                     then evaluator fb
                     else evaluator tb
               _ -> left "Invalid if block."
@@ -158,31 +159,31 @@ listEval (a:as) = case a of
     s -> do
         d <- lookupSymbol s
         case d of
-          Just c -> lambdaEval (c:as)
+          Just c -> lambdaEval (Cons c as)
           Nothing -> case M.lookup s predefined of
                        Just c -> case c of
-                                   Unary f -> if length as /= 1
+                                   Unary f -> if consLen as /= 1
                                               then left "Incorrect number of arguments, expected 1."
-                                              else evaluator (head as) >>= \a -> case f a of
+                                              else evaluator (let (Cons a _) = as in a) >>= \a -> case f a of
                                                                                    Left m -> left m
                                                                                    Right r -> pure r
-                                   Binary f -> if length as /= 2
+                                   Binary f -> if consLen as /= 2
                                                then left "Incorrect number of arguments, expected 2."
                                                else do
-                                       a1 <- evaluator (head as)
-                                       a2 <- evaluator (head (tail as))
+                                       a1 <- evaluator (let (Cons a _) = as in a)
+                                       a2 <- evaluator (let (Cons _ (Cons b _)) = as in b)
                                        case f a1 a2 of
                                          Left m  -> left m
                                          Right r -> pure r
                                    Ternary f -> undefined
                        Nothing -> left $ "Unknown function " ++ s
-  Num n -> left "Invalid function of type 'Num'"
-  List (Str "lambda":xs) -> lambdaEval (a:as)
-  List l -> left $ "Whatever you are trying, don't."
+  Num n -> left $ "Invalid function of type 'Num'" ++ show n
+  Cons (Str "lambda") _ -> lambdaEval (Cons a as)
+  Cons l _ -> left $ "Whatever you are trying, don't."
   Quote q -> left $ "Invalid function \'" ++ show q
 
 evaluator :: Atom -> StateP Atom
-evaluator (List expr) = listEval expr
+evaluator b@(Cons a expr) = listEval b
 evaluator (Num a) = pure $ Num a
 -- If trying to evaluate a symbol, lookup in defs
 evaluator (Str a) = do
@@ -191,7 +192,7 @@ evaluator (Str a) = do
       Just a  -> pure a
       Nothing -> left ("Could not find variable " ++ a)
 evaluator (Quote a) = pure a
-evaluator _ = pure (List []) -- Figure out eval's for other expressions.
+evaluator _ = pure Nil -- Figure out eval's for other expressions.
 
 main :: IO ()
 main = do
@@ -213,10 +214,10 @@ main = do
                 putStrLn "Syntax error :)"
                 print e
                 exitWith (ExitFailure 1)
-            Right (List ast) -> do
+            Right ast -> do
                 when putAst (print ast)
                 putStrLn ""
-                let Identity (res, state) = runStateT (runEitherT (traverse evaluator ast)) initState
+                let Identity (res, state) = runStateT (runEitherT (traverse evaluator (consToList ast))) initState
                 when debug $ putStrLn "Trace: " >> traverse_ putStrLn (trace state) >> putStrLn ""
                 case res of
                   Left a -> do
@@ -232,7 +233,7 @@ main = do
                       putStr "Output: "
                       case M.lookup "output" (definitions state) of
                         Just ((_, Str a):_) -> putStrLn a
-                        Just ((_, List a):_) -> traverse_ print a
+                        Just ((_, b@(Cons _ _)):_) -> traverse_ print (consToList b)
                         Just ((_, a):_)     -> print a
                         Nothing             -> putStrLn "None"
                       when repl
@@ -254,7 +255,7 @@ help = putStrLn "Help"
 printDefinitions :: ProgramState -> IO ()
 printDefinitions s = M.traverseWithKey (\k v ->
                                            putStr k >> putStr " -> " >>
-                                           print (snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, List []) v)
+                                           print (snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, Nil) v)
                                           ) (definitions s) >> pure ()
 replLoop :: ProgramState -> IO ()
 replLoop state = do
@@ -272,8 +273,8 @@ replLoop state = do
           let (ps, res) = runParser programParser inp
           if null (st_str ps) then pure () else putStrLn ("Warning, could not parse: " ++ st_str ps)
           (case res of
-             Right (List ast) -> do
-                 let Identity (res, nstate) = runStateT (runEitherT (traverse evaluator ast)) state
+             Right ast -> do
+                 let Identity (res, nstate) = runStateT (runEitherT (traverse evaluator (consToList ast))) state
                  case res of
                    Left s  -> putStr "Error: " >> putStrLn s >> return state
                    Right s -> traverse_ print s >> return nstate
