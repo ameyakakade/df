@@ -31,10 +31,10 @@ equals :: Fun
 equals = Binary $ \a b -> Right $ if a == b then Str "t" else Nil
 
 car :: Fun
-car = Unary $ \case Cons a _ -> Right a; _ -> Left "car function expects a cons cell as argument"
+car = Unary $ \case Cons a _ -> Right a; Nil -> Right Nil; _ -> Left "car function expects a cons cell or nil as argument"
 
 cdr :: Fun
-cdr = Unary $ \case Cons _ a  -> Right a; _ -> Left "cdr function expects a cons cell as argument"
+cdr = Unary $ \case Cons _ a  -> Right a; Nil -> Right Nil; _ -> Left "cdr function expects a cons cell or nil as argument"
 
 cons :: Fun
 cons = Binary $ \a b -> Right (Cons a b)
