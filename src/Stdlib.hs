@@ -18,7 +18,7 @@ predefined = M.fromList [
     ("cons", cons),
     ("cdr", cdr),
     ("negate", Stdlib.negate),
-    ("print", Unary $ \a -> (liftIO (print a)) >> pure Nil)
+    ("print", Unary $ \a -> (liftIO (print a)) >> pure a)
     ]
 
 operators :: String -> Fun
