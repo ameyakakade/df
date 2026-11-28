@@ -125,10 +125,10 @@ help = putStrLn "Help"
        >> putStrLn ":help        - display this message"
 
 printDefinitions :: ProgramState -> IO ()
-printDefinitions s = M.traverseWithKey (\k v ->
+printDefinitions s = void $ M.traverseWithKey (\k v ->
                                            putStr k >> putStr " -> " >>
                                            print (snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, Nil) v)
-                                          ) (definitions s) >> pure ()
+                                          ) (definitions s)
 
 replLoop :: ProgramState -> IO ()
 replLoop state = do

@@ -18,7 +18,7 @@ predefined = M.fromList [
     ("cons", cons),
     ("cdr", cdr),
     ("negate", Stdlib.negate),
-    ("print", Unary $ \a -> (liftIO (print a)) >> pure a)
+    ("print", Unary $ \a -> liftIO (print a) >> pure a)
     ]
 
 operators :: String -> Fun
@@ -61,8 +61,7 @@ consZip Nil _ = Nil
 consZip _ Nil = Nil
 
 listToCons :: [Atom] -> Atom
-listToCons [] = Nil
-listToCons (a:b) = Cons a (listToCons b)
+listToCons b = foldr Cons Nil b
 
 consToList :: Atom -> [Atom]
 consToList Nil = []

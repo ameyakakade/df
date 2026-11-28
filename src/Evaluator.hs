@@ -1,3 +1,4 @@
+{-# LANGUAGE LambdaCase #-}
 module Evaluator where
 
 import Types
@@ -173,16 +174,15 @@ evaluator _ = pure Nil -- Figure out eval's for other expressions.
 -- Every eval function goes through this, it will keep a 'stack trace'
 -- and can be used to make a step debugger.
 tracer :: (Atom -> StateP Atom) -> Atom -> StateP Atom
-tracer fn expr = gets traceFlag >>= \a ->
-  case a of
+tracer fn expr = gets traceFlag >>= \case
     None -> fn expr
     Trace -> do
-        modify (\s -> s { trace = expr:(trace s) })
+        modify (\s -> s { trace = expr:trace s })
         r <- fn expr
         modify (\s -> s { trace = tail (trace s) })
         return r
     StepIn -> do
-        modify (\s -> s { trace = expr:(trace s) })
+        modify (\s -> s { trace = expr:trace s })
         r <- fn expr
         t <- gets trace
         liftIO $ do
@@ -194,8 +194,8 @@ tracer fn expr = gets traceFlag >>= \a ->
 
 error :: String -> StateP a
 error a = gets traceFlag
-  >>= \l -> case l of
-              None -> do
-                  left $ a ++ "\nUse '-trace' to get stack dump."
-              Trace -> do
-                  gets trace >>= \t -> left $ a ++ "\nTrace: \n" ++ (unlines (map show t))
+  >>= \case
+    None -> do
+        left $ a ++ "\nUse '-trace' to get stack dump."
+    Trace -> do
+        gets trace >>= \t -> left $ a ++ "\nTrace: \n" ++ unlines (map show t)
