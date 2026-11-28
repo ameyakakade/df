@@ -174,6 +174,9 @@ listEval (Cons a as) = case a of
               _ -> left "Invalid if block."
 
     "let" -> letEval as
+    "eval" -> case as of
+                Cons expr Nil -> evaluator expr >>= evaluator
+                _ -> left "Unexpected number of arguments for eval."
     -- This is the worst code in this project and must be changed
     s -> do
         d <- lookupSymbol s
