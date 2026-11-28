@@ -1,3 +1,4 @@
+import           Prelude hiding (error)
 import           Parser
 import           Stdlib
 import           Types
@@ -87,15 +88,17 @@ defineEval (Cons n (Cons rs Nil)) = case n of
       defs <- gets definitions
       defineSymbol name ers
       pure Nil
-  _ -> left "Name has to be a String."
+  _ -> error "Name has to be a String."
 
-defineEval _ = left "Invalid define block."
+defineEval _ = error "Invalid define block."
+
+lambdaEval = tracer lambdaEvalH
 
 -- Deconstructs the lambda using pattern matching, evals the args, and apply.
-lambdaEval :: Atom -> StateP Atom
-lambdaEval (Cons (Cons (Str "lambda") (Cons argList (Cons expr Nil))) args) = do
+lambdaEvalH :: Atom -> StateP Atom
+lambdaEvalH (Cons (Cons (Str "lambda") (Cons argList (Cons expr Nil))) args) = do
     if consLen argList /= consLen args
-      then left ("Incorrect number of arguments. Expected " ++ show (consLen argList) ++ ", got " ++ show (consLen args) ++
+      then error ("Incorrect number of arguments. Expected " ++ show (consLen argList) ++ ", got " ++ show (consLen args) ++
                 "\n" ++ "Args are: " ++ show args)
       else return Nil
     inNewScope $ do
@@ -103,24 +106,20 @@ lambdaEval (Cons (Cons (Str "lambda") (Cons argList (Cons expr Nil))) args) = do
           (\(Cons aname aexpr) -> do
                 let an = aname
                 ae <- evaluator aexpr
-          -- Add trace every time a lambda is reduced
-                modify $ \s ->
-                  s { trace = trace s ++ ["Definitions: " ++ show (definitions s) ++
-                                          "\nExpr: " ++ show expr ++
-                                          "\nArgs: " ++ show (consZip argList args) ++
-                                          "\nScope: " ++ show (scope s) ++ "\n"]}
                 case an of
                   Str a -> defineSymbol a ae
-                  _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
+                  _ -> error $ "Tried to bind " ++ show an ++ " to " ++ show ae
           )
           (consToList $ consZip argList args)
         evaluator expr
 
-lambdaEval l = left $ "Invalid lambda, " ++ show l
+lambdaEvalH l = error $ "Invalid lambda, " ++ show l
+
+macroEval = tracer macroEvalH
 
 -- Deconstructs the macro using pattern matching, do NOT eval the args just bind, and return expr.
-macroEval :: Atom -> StateP Atom
-macroEval (Cons (Cons (Str "macro") (Cons argList (Cons expr Nil))) args) = do
+macroEvalH :: Atom -> StateP Atom
+macroEvalH (Cons (Cons (Str "macro") (Cons argList (Cons expr Nil))) args) = do
     inNewScope $ do
         traverse_
           (\(Cons aname aexpr) -> do
@@ -128,12 +127,12 @@ macroEval (Cons (Cons (Str "macro") (Cons argList (Cons expr Nil))) args) = do
                 let ae = aexpr
                 case an of
                   Str a -> defineSymbol a ae
-                  _ -> left $ "Tried to bind " ++ show an ++ " to " ++ show ae
+                  _ -> error $ "Tried to bind " ++ show an ++ " to " ++ show ae
           )
           (consToList $ consZip argList args)
         evaluator expr
 
-macroEval a = left (show a)
+macroEvalH a = error (show a)
 
 lookupSymbol :: String -> StateP (Maybe Atom)
 lookupSymbol name = do
@@ -143,21 +142,25 @@ lookupSymbol name = do
       -- Find the newest one
       Just set -> pure $ Just $ snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, Nil) set
 
-letEval :: Atom -> StateP Atom
-letEval (Cons defines (Cons res Nil)) = inNewScope $ do
+letEval = tracer letEvalH
+
+letEvalH :: Atom -> StateP Atom
+letEvalH (Cons defines (Cons res Nil)) = inNewScope $ do
     traverse_ evaluator (consToList defines)
     evaluator res
-letEval _ = left "Invalid syntax for let block."
+letEvalH _ = error "Invalid syntax for let block."
+
+listEval = tracer listEvalH
 
 -- A list when evaluated is function application
-listEval :: Atom -> StateP Atom
-listEval Nil = pure Nil
-listEval (Cons a as) = case a of
+listEvalH :: Atom -> StateP Atom
+listEvalH Nil = pure Nil
+listEvalH (Cons a as) = case a of
   Str s -> case s of
     "define" -> defineEval as
     "quote" -> case as of
                  Cons a Nil -> pure a
-                 _ -> left "Unexpected number of arguments for quote."
+                 _ -> error "Unexpected number of arguments for quote."
     "if" -> case consLen as of
               2 -> do
                   let [cond, tb] = consToList as
@@ -172,50 +175,75 @@ listEval (Cons a as) = case a of
                   if cE == Nil
                     then evaluator fb
                     else evaluator tb
-              _ -> left "Invalid if block."
+              _ -> error "Invalid if block."
 
     "let" -> letEval as
     "eval" -> case as of
                 Cons expr Nil -> evaluator expr >>= evaluator
-                _ -> left "Unexpected number of arguments for eval."
+                _ -> error "Unexpected number of arguments for eval."
     -- This is the worst code in this project and must be changed
     s -> do
         d <- lookupSymbol s
         case d of
           Just c@(Cons (Str "lambda") _) -> lambdaEval (Cons c as)
           Just c@(Cons (Str "macro") _) -> macroEval (Cons c as) >>= evaluator
-          Just c -> left $ "What? -> " ++ show c ++ show s
+          Just c -> error $ "What? -> " ++ show c ++ show s
           Nothing -> case M.lookup s predefined of
                        Just c -> case c of
                                    Unary f -> if consLen as /= 1
-                                              then left "Incorrect number of arguments, expected 1."
+                                              then error "Incorrect number of arguments, expected 1."
                                               else let (Cons a _) = as in evaluator a >>= f
                                    Binary f -> if consLen as /= 2
-                                               then left "Incorrect number of arguments, expected 2."
+                                               then error "Incorrect number of arguments, expected 2."
                                                else do
                                        a1 <- evaluator (let (Cons a _) = as in a)
                                        a2 <- evaluator (let (Cons _ (Cons b _)) = as in b)
                                        f a1 a2 
                                    Ternary f -> undefined
-                       Nothing -> left $ "Unknown function " ++ s
-  Num n -> left $ "Invalid function of type 'Num'" ++ show n
-  Cons (Str "macro") _ -> left "HEIFHO"
+                       Nothing -> error $ "Unknown function " ++ s
+  Num n -> error $ "Invalid function of type 'Num'" ++ show n
+  Cons (Str "macro") _ -> error "HEIFHO"
   Cons (Str "lambda") _ -> lambdaEval (Cons a as)
-  Cons l ls -> left $ "Whatever you are trying, don't. -> " ++ show (Cons l ls)
-  Quote q -> left $ "Invalid function \'" ++ show q
+  Cons l ls -> error $ "Whatever you are trying, don't. -> " ++ show (Cons l ls)
+  Quote q -> error $ "Invalid function \'" ++ show q
 
 -- Evaluator will NOT make a new scope
 evaluator :: Atom -> StateP Atom
 evaluator b@(Cons a expr) = listEval b
-evaluator (Num a) = pure $ Num a
+evaluator (Num a) = tracer pure (Num a)
 -- If trying to evaluate a symbol, lookup in defs
 evaluator (Str a) = do
     l <- lookupSymbol a
     case l of
       Just a  -> pure a
-      Nothing -> left ("Could not find variable " ++ a)
-evaluator (Quote a) = pure a
+      Nothing -> error ("Could not find variable " ++ a)
+evaluator (Quote a) = tracer pure a
 evaluator _ = pure Nil -- Figure out eval's for other expressions.
+
+-- Every eval function goes through this, it will keep a 'stack trace'
+-- and can be used to make a step debugger.
+tracer :: (Atom -> StateP Atom) -> Atom -> StateP Atom
+tracer fn expr = gets traceFlag >>= \a ->
+  case a of
+    None -> fn expr
+    Trace -> do
+        modify (\s -> s { trace = expr:(trace s) })
+        r <- fn expr
+        modify (\s -> s { trace = tail (trace s) })
+        return r
+    Step -> do
+        modify (\s -> s { trace = expr:(trace s) })
+        r <- fn expr
+        t <- gets trace
+        liftIO $ do
+            putStr " -> "
+            print r
+            traverse_ (\a -> print a >> putStrLn "") (take 7 t)
+        modify (\s -> s { trace = tail (trace s) })
+        return r
+
+error :: String -> StateP a
+error a = gets trace >>= \t -> left $ a ++ "\nTrace: \n" ++ (unlines (map show t))
 
 main :: IO ()
 main = do
@@ -241,7 +269,7 @@ main = do
                 when putAst (print ast)
                 putStrLn ""
                 (res, state) <- runStateT (runEitherT (traverse evaluator (consToList ast))) initState
-                when debug $ putStrLn "Trace: " >> traverse_ putStrLn (trace state) >> putStrLn ""
+                when debug $ putStrLn "Trace: " >> traverse_ print (trace state) >> putStrLn ""
                 case res of
                   Left a -> do
                       putStrLn "Error when interpreting,"
@@ -290,7 +318,7 @@ replLoop state = do
       ":quit"        -> pure ()
       ":clear"       -> putStrLn "Clearing all definitions" >> replLoop initState
       ":definitions" -> printDefinitions state >> replLoop state
-      ":trace"       -> traverse_ putStrLn (trace state) >> replLoop state
+      ":trace"       -> traverse_ print (trace state) >> replLoop state
       ":help"        -> help >> replLoop state
       _ -> do
           let (ps, res) = runParser programParser inp

@@ -32,14 +32,17 @@ data Fun = Unary (Atom -> Result)
          | Binary (Atom -> Atom -> Result)
          | Ternary (Atom -> Atom -> Result)
 
+data TraceFlag = None | Trace | Step deriving Show
+
 -- Stores map of string to scope no and atom
 -- Stores current scope index
 data ProgramState = ProgramState {
     definitions :: M.Map String [(Int, Atom)],
     scope       :: Int,
-    trace       :: [String]
+    trace       :: [Atom],
+    traceFlag   :: TraceFlag
     } deriving (Show)
 
-initState = ProgramState M.empty 0 []
+initState = ProgramState M.empty 0 [] Trace
 
 type StateP a = EitherT String (StateT ProgramState IO) a
