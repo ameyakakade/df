@@ -19,6 +19,7 @@ executable df
     other-modules: Parser
                    Types
                    Stdlib
+                   Evaluator
 
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
