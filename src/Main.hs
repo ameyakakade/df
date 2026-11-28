@@ -231,7 +231,7 @@ tracer fn expr = gets traceFlag >>= \a ->
         r <- fn expr
         modify (\s -> s { trace = tail (trace s) })
         return r
-    Step -> do
+    StepIn -> do
         modify (\s -> s { trace = expr:(trace s) })
         r <- fn expr
         t <- gets trace
@@ -243,7 +243,12 @@ tracer fn expr = gets traceFlag >>= \a ->
         return r
 
 error :: String -> StateP a
-error a = gets trace >>= \t -> left $ a ++ "\nTrace: \n" ++ (unlines (map show t))
+error a = gets traceFlag
+  >>= \l -> case l of
+              None -> do
+                  left $ a ++ "\nUse '-trace' to get stack dump."
+              Trace -> do
+                  gets trace >>= \t -> left $ a ++ "\nTrace: \n" ++ (unlines (map show t))
 
 main :: IO ()
 main = do
@@ -251,7 +256,8 @@ main = do
     let fn = filter (not . isPrefixOf "-") args
     let check name = case find (== name) args of Just _ -> True; Nothing -> False
     let repl      = check "-repl"
-    let debug     = check "-trace"
+    let trace     = check "-trace"
+    let traceAll  = check "-traceall"
     let putAst    = check "-ast"
     let globalSym = check "-definitions"
     code <- Control.Exception.try $ fmap concat (traverse readFile fn) :: IO (Either IOException String)
@@ -268,12 +274,22 @@ main = do
             Right ast -> do
                 when putAst (print ast)
                 putStrLn ""
-                (res, state) <- runStateT (runEitherT (traverse evaluator (consToList ast))) initState
-                when debug $ putStrLn "Trace: " >> traverse_ print (trace state) >> putStrLn ""
+                (res, state) <- runStateT (runEitherT (traverse evaluator (consToList ast)))
+                                (initState { traceFlag = if trace || traceAll then Trace else None })
                 case res of
                   Left a -> do
                       putStrLn "Error when interpreting,"
-                      putStrLn a
+                      if traceAll
+                        then do
+                          putStrLn a
+                        else do
+                          -- TODO: Assuming error message is 2 lines and rest is trace.
+                          putStrLn $ unlines (let l = lines a
+                                              in if length l > 10
+                                                 then take 6 l ++ ["..."] ++ drop (length l - 4) l
+                                                 else l
+                                             )
+                          putStrLn $ "Pass '-traceall' to show full trace."
                       exitWith (ExitFailure 1)
                   Right a -> do
                       putStrLn "Completed evaluation successfully!"
@@ -308,6 +324,7 @@ printDefinitions s = M.traverseWithKey (\k v ->
                                            putStr k >> putStr " -> " >>
                                            print (snd $ foldl' (\(acc, a) (elem, b) -> if acc >= elem then (acc, a) else (elem, b)) (-1, Nil) v)
                                           ) (definitions s) >> pure ()
+
 replLoop :: ProgramState -> IO ()
 replLoop state = do
     putStr "λ> "

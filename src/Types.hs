@@ -1,4 +1,3 @@
-{-# LANGUAGE DataKinds #-}
 module Types where
 
 import           Control.Monad.State.Lazy
@@ -32,7 +31,7 @@ data Fun = Unary (Atom -> Result)
          | Binary (Atom -> Atom -> Result)
          | Ternary (Atom -> Atom -> Result)
 
-data TraceFlag = None | Trace | Step deriving Show
+data TraceFlag = None | Trace | StepIn | StepOver deriving Show
 
 -- Stores map of string to scope no and atom
 -- Stores current scope index
@@ -43,6 +42,6 @@ data ProgramState = ProgramState {
     traceFlag   :: TraceFlag
     } deriving (Show)
 
-initState = ProgramState M.empty 0 [] Trace
+initState = ProgramState M.empty 0 [] StepIn
 
 type StateP a = EitherT String (StateT ProgramState IO) a
