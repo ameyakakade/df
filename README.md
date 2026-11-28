@@ -1,3 +1,5 @@
+## Use code from tag v1.0, readme is not updated for latest changes.
+
 # DF
 
 DF is a dynamically scoped, dynamically typed, functional dialect of Lisp.

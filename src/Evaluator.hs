@@ -118,7 +118,6 @@ listEvalH (Cons a as) = case a of
                   cE <- evaluator cond
                   if cE == Nil
                     then pure Nil
-
                     else evaluator tb
               3 -> do
                   let [cond, tb, fb] = consToList as
@@ -200,4 +199,3 @@ error a = gets traceFlag
                   left $ a ++ "\nUse '-trace' to get stack dump."
               Trace -> do
                   gets trace >>= \t -> left $ a ++ "\nTrace: \n" ++ (unlines (map show t))
-
