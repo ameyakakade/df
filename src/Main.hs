@@ -121,7 +121,6 @@ lambdaEval l = left $ "Invalid lambda, " ++ show l
 -- Deconstructs the macro using pattern matching, do NOT eval the args just bind, and return expr.
 macroEval :: Atom -> StateP Atom
 macroEval (Cons (Cons (Str "macro") (Cons argList (Cons expr Nil))) args) = do
-    defineSymbol "code" args
     inNewScope $ do
         traverse_
           (\(Cons aname aexpr) -> do
@@ -156,7 +155,9 @@ listEval Nil = pure Nil
 listEval (Cons a as) = case a of
   Str s -> case s of
     "define" -> defineEval as
-    "quote" -> let (Cons a Nil) = as in pure a
+    "quote" -> case as of
+                 Cons a Nil -> pure a
+                 _ -> left "Unexpected number of arguments for quote."
     "if" -> case consLen as of
               2 -> do
                   let [cond, tb] = consToList as
@@ -183,7 +184,7 @@ listEval (Cons a as) = case a of
         case d of
           Just c@(Cons (Str "lambda") _) -> lambdaEval (Cons c as)
           Just c@(Cons (Str "macro") _) -> macroEval (Cons c as) >>= evaluator
-          Just c -> left $ "What? -> " ++ show c
+          Just c -> left $ "What? -> " ++ show c ++ show s
           Nothing -> case M.lookup s predefined of
                        Just c -> case c of
                                    Unary f -> if consLen as /= 1

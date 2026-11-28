@@ -1,0 +1,19 @@
+(define map
+  '(lambda (fn map-list)
+     (if map-list (cons (fn (car map-list)) (map fn (cdr map-list))))))
+
+(define list '(lambda (ls) (map '(lambda (a) (eval a)) ls)))
+
+(define defun
+  '(macro (name args body)
+          (list '('define name
+                          (list '('quote (list '('lambda args body))))))))
+
+(defun add-three (a b) (+ a b))
+(add-three 6 7)
+;-- TEST BLOCK --
+;
+;Completed evaluation successfully!
+;
+;Results: 13
+;Output: None
